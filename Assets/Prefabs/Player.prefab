@@ -205,10 +205,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1c95755cd10610b4d824600a87f8e929, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  angularSpeed: 400
+  angularSpeed: 3000
   jumpForce: 0.25
   gravity: 45
-  moveSpeed: 5
+  moveSpeed: 8
   groundMask:
     serializedVersion: 2
     m_Bits: 64

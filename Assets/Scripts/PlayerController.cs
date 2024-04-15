@@ -5,7 +5,7 @@ using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
-    
+
     [SerializeField] private float angularSpeed;
     [SerializeField] private float jumpForce = 4f;
     [SerializeField] private float gravity = 9.81f;
@@ -15,11 +15,10 @@ public class PlayerController : MonoBehaviour
     private int playerID;
     private InputDevice inputDevice;
     private InputActions playerActions;
-    private Vector2 inputMoveVector;
-    private Vector2 inputLookVector;
     private float verticalVelocity = 0;
     private CharacterController characterController;
-
+    private Transform currentPlatform = null;
+    private Vector3 lastPlatformPosition = Vector3.zero;
     [SerializeField] private Transform buletSpawnPoint;
     [SerializeField] private float shootingForce = 10f;
     private void Start()
@@ -38,25 +37,40 @@ public class PlayerController : MonoBehaviour
     }
     void Update()
     {
-        if (playerActions == null)
-        {
-            Debug.LogError("Player actions are not initialized for player ID: " + playerID);
-            return; // Skip update if playerActions is null to avoid NullReferenceException
-        }
-        inputMoveVector = playerActions.moveValue;
-        inputLookVector = playerActions.lookValue;
-
-        IsGrounded();
         HandleMovement();
         HandleFalling();
         HandleJump();
         HandleShooting();
-        if (characterController.isGrounded && verticalVelocity < 0)
-        {
-            verticalVelocity = 0;
-        }
-
         HandleRotation();
+    }
+    public void LateUpdate()
+    {
+        if (IsGrounded())
+        {
+            ApplyPlatformCorrection();
+        }
+        else
+        {
+            transform.parent = null;
+            currentPlatform = null;
+        }
+    }
+    void ApplyPlatformCorrection()
+    {
+        if (currentPlatform != null)
+        {
+            // Calculate the platform's movement
+            Vector3 platformMovement = currentPlatform.position - lastPlatformPosition;
+
+            // If the platform has moved, manually adjust the player's position
+            if (platformMovement != Vector3.zero)
+            {
+                characterController.Move(platformMovement);
+            }
+
+            // Always update lastPlatformPosition for the next frame
+            lastPlatformPosition = currentPlatform.position;
+        }
     }
     public void SetID(int _id, InputDevice _inputDevice)
     {
@@ -67,7 +81,7 @@ public class PlayerController : MonoBehaviour
     }
     private void HandleJump()
     {
-        if (playerActions.jumpAction.WasPressed)
+        if (playerActions.jumpAction.WasPressed && IsGrounded())
         {
             Debug.Log("Jump");
             verticalVelocity = Mathf.Sqrt(2 * jumpForce * gravity); // Initial jump velocity
@@ -82,7 +96,12 @@ public class PlayerController : MonoBehaviour
 
     private void HandleRotation()
     {
-        Vector3 direction = inputLookVector.sqrMagnitude > 0.1f ? new Vector3(inputLookVector.x, 0, inputLookVector.y) : (inputMoveVector.sqrMagnitude > 0.1f ? new Vector3(inputMoveVector.x, 0, inputMoveVector.y) : Vector3.zero);
+        Vector3 moveDirection = new Vector3(playerActions.moveValue.x, 0, playerActions.moveValue.y);
+        Vector3 lookDirection = new Vector3(playerActions.lookValue.x, 0, playerActions.lookValue.y);
+
+        // Choose which direction to face based on the presence of input
+        Vector3 direction = (playerActions.lookValue.sqrMagnitude > 0.01) ? lookDirection : ((playerActions.moveValue.sqrMagnitude > 0.01) ? moveDirection : Vector3.zero);
+
         if (direction != Vector3.zero)
         {
             RotateTowards(direction);
@@ -106,11 +125,33 @@ public class PlayerController : MonoBehaviour
     private void RotateTowards(Vector3 direction)
     {
         Quaternion targetRotation = Quaternion.LookRotation(direction, Vector3.up);
-        transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, angularSpeed * Time.deltaTime);
+        if (GetComponent<Rigidbody>() != null)
+        {
+            GetComponent<Rigidbody>().MoveRotation(Quaternion.RotateTowards(transform.rotation, targetRotation, angularSpeed * Time.deltaTime));
+        }
+        else
+        {
+            transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, angularSpeed * Time.deltaTime);
+        }
     }
-
     private bool IsGrounded()
     {
-        return Physics.CheckSphere(transform.position - new Vector3(0, 1, 0), 0.5f, groundMask);
+        RaycastHit hit;
+        if (Physics.SphereCast(transform.position, 0.5f, Vector3.down, out hit, 1f, groundMask))
+        {
+            if (currentPlatform != hit.transform)
+            {
+                currentPlatform = hit.transform;
+                lastPlatformPosition = currentPlatform.position;  // Set initial position for new platform
+            }
+            return true;
+        }
+        else
+        {
+            currentPlatform = null;
+            return false;
+        }
     }
+
+ 
 }

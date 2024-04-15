@@ -30,11 +30,7 @@ public class PlayerSpawner : MonoBehaviour
     }
     void Start()
     {
-        // Initial spawn based on connected devices at start
         SpawnPlayers();
-
-        // Subscribe to device attached event
-      //  InputManager.OnDeviceDetached += OnDeviceDetached;
         InputManager.OnDeviceAttached += OnDeviceAttached;
     }
 
