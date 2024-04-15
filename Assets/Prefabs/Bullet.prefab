@@ -20,7 +20,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &3261545873834898485
 Transform:
   m_ObjectHideFlags: 0
@@ -146,3 +146,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0800060c6c8df4a4b8f1541d9b21e4c3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  bulletSpeed: 20

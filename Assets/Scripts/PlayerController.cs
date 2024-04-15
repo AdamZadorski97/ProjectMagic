@@ -9,18 +9,29 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float angularSpeed;
     [SerializeField] private float jumpForce = 4f;
     [SerializeField] private float gravity = 9.81f;
+    [SerializeField] private float acceleration = 3f;
+    [SerializeField] private float deceleration = 3f;
+    [SerializeField] private float slideDeceleration = 5f;  // Deceleration rate of the slide
     [SerializeField] private float moveSpeed;
     [SerializeField] private LayerMask groundMask;
+    [SerializeField] private float slideSpeed = 10f;  // Speed of the slide
+    [SerializeField] private float slideDuration = 0.5f;  // How long the slide lasts
+    [SerializeField] private Transform meshTransform;
 
+    private bool isSliding = false;  // Track if currently sliding
+    private float slideTimer = 0;
     private int playerID;
     private InputDevice inputDevice;
     private InputActions playerActions;
     private float verticalVelocity = 0;
+    [SerializeField] private Vector3 currentVelocity = Vector3.zero;
+    public Vector3 inputDirection;
     private CharacterController characterController;
     private Transform currentPlatform = null;
     private Vector3 lastPlatformPosition = Vector3.zero;
     [SerializeField] private Transform buletSpawnPoint;
     [SerializeField] private float shootingForce = 10f;
+
     private void Start()
     {
         characterController = GetComponent<CharacterController>();
@@ -42,6 +53,46 @@ public class PlayerController : MonoBehaviour
         HandleJump();
         HandleShooting();
         HandleRotation();
+
+        if (playerActions.slideAction.WasPressed && !isSliding && currentVelocity.magnitude > 0)
+        {
+            Debug.Log("start Sliding");
+            StartSliding();
+        }
+
+        if (isSliding)
+        {
+            UpdateSliding();
+        }
+    }
+    private void StartSliding()
+    {
+        meshTransform.localScale = new Vector3(1, 0.25f, 1);
+        isSliding = true;
+        slideTimer = slideDuration;
+        currentVelocity = transform.forward * 8;  // Set slide velocity in the current forward direction
+    }
+
+
+
+    private void UpdateSliding()
+    {
+
+        if (!isSliding)
+            return;
+
+        slideTimer -= Time.deltaTime;
+
+
+        currentVelocity = Vector3.Lerp(currentVelocity, Vector3.zero, Time.deltaTime * slideDeceleration);
+
+
+        if (slideTimer <= 0)
+        {
+            isSliding = false;  // End the slide
+            currentVelocity = Vector3.zero;  // Ensure the character stops if any residual velocity remains
+            meshTransform.localScale = new Vector3(1, 1f, 1);  // Reset any transformations made during the slide
+        }
     }
     public void LateUpdate()
     {
@@ -88,10 +139,45 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+
     private void HandleMovement()
     {
-        Vector3 move = new Vector3(playerActions.moveValue.x, verticalVelocity, playerActions.moveValue.y) * moveSpeed * Time.deltaTime;
-        characterController.Move(move);
+        if (isSliding)
+            return;
+
+        inputDirection = new Vector3(playerActions.moveValue.x, 0, playerActions.moveValue.y);
+        bool hasInput = inputDirection.sqrMagnitude > 0.01f;
+
+        if (hasInput)
+        {
+            inputDirection.Normalize();
+            float targetSpeed = inputDirection.magnitude * moveSpeed;
+            Vector3 targetVelocity = inputDirection.normalized * targetSpeed;
+            float smoothTime = (1 / acceleration);
+            currentVelocity = Vector3.SmoothDamp(currentVelocity, targetVelocity, ref currentVelocity, smoothTime);
+        }
+        else
+        {
+            // When no input is detected, smoothly decelerate to zero
+            if (currentVelocity.magnitude > 0.01f)
+            {
+                float smoothTime = (1 / deceleration);
+                currentVelocity = Vector3.SmoothDamp(currentVelocity, Vector3.zero, ref currentVelocity, smoothTime);
+            }
+            else
+            {
+                currentVelocity = Vector3.zero; // Ensuring velocity is set to zero when it's close enough
+            }
+        }
+
+        // Apply gravity and movement
+        if (!IsGrounded())
+            verticalVelocity -= gravity * Time.deltaTime;
+        else
+            verticalVelocity = 0;
+
+        Vector3 displacement = new Vector3(currentVelocity.x, verticalVelocity, currentVelocity.z) * Time.deltaTime;
+        characterController.Move(displacement);
     }
 
     private void HandleRotation()
@@ -109,9 +195,14 @@ public class PlayerController : MonoBehaviour
     }
     private void HandleFalling()
     {
-        if (IsGrounded())
-            return;
-        verticalVelocity -= gravity * Time.deltaTime;
+        if (!IsGrounded())
+        {
+            verticalVelocity -= gravity * Time.deltaTime;  // Apply gravity if not grounded
+        }
+        else if (verticalVelocity < 0)
+        {
+            verticalVelocity = 0;  // Stop falling when grounded
+        }
     }
     private void HandleShooting()
     {
@@ -119,19 +210,17 @@ public class PlayerController : MonoBehaviour
         {
             GameObject bullet = ObjectPool.Instance.GetFromPool();
             bullet.transform.position = buletSpawnPoint.position;  // Set the position to the bullet spawn point
-            bullet.transform.rotation = Quaternion.LookRotation(transform.forward);  // Orient bullet in the direction the player is facing
+            bullet.GetComponent<BulletController>().SetVelocity(transform.forward);
         }
     }
     private void RotateTowards(Vector3 direction)
     {
-        Quaternion targetRotation = Quaternion.LookRotation(direction, Vector3.up);
-        if (GetComponent<Rigidbody>() != null)
+        if (isSliding)
+            return;
+        if (direction != Vector3.zero)
         {
-            GetComponent<Rigidbody>().MoveRotation(Quaternion.RotateTowards(transform.rotation, targetRotation, angularSpeed * Time.deltaTime));
-        }
-        else
-        {
-            transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, angularSpeed * Time.deltaTime);
+            Quaternion targetRotation = Quaternion.LookRotation(direction, Vector3.up);
+            transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, Time.deltaTime * angularSpeed);
         }
     }
     private bool IsGrounded()
@@ -153,5 +242,5 @@ public class PlayerController : MonoBehaviour
         }
     }
 
- 
+
 }

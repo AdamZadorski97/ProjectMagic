@@ -62,24 +62,36 @@ public class InputController : MonoBehaviour
         actions.Device.StopVibration();
     }
 
+    private float ApplyDeadZone(float value, float deadZone = 0.2f)
+    {
+        // Check if the input is within the dead zone
+        if (Mathf.Abs(value) < deadZone)
+        {
+            return 0f;
+        }
 
+        // Scale the input value from the edge of the dead zone to full input
+        return (value - Mathf.Sign(value) * deadZone) / (1f - deadZone);
+    }
 
     private Vector2 MoveValue(InputActions actions)
     {
-        // Implementation remains the same
-        float horizontalValue = Utility.ApplyDeadZone(actions.moveAction.Value.x, 0.3f, 1f);
-        float verticalValue = Utility.ApplyDeadZone(actions.moveAction.Value.y, 0.3f, 1f);
+        // Apply dead zone correctly
+        float horizontalValue = ApplyDeadZone(actions.moveAction.Value.x);
+        float verticalValue = ApplyDeadZone(actions.moveAction.Value.y);
+
         Vector2 moveVector = new Vector2(horizontalValue, verticalValue);
-        if (moveVector.sqrMagnitude > 1)
-            moveVector.Normalize();
+        //if (moveVector.sqrMagnitude > 1)
+        //    moveVector.Normalize();
+
         return moveVector;
     }
 
     private Vector2 LookValue(InputActions actions)
     {
         // Implementation remains the same
-        float horizontalValue = Utility.ApplyDeadZone(actions.lookAction.Value.x, 0.3f, 1f);
-        float verticalValue = Utility.ApplyDeadZone(actions.lookAction.Value.y, 0.3f, 1f);
+        float horizontalValue = ApplyDeadZone(actions.lookAction.Value.x);
+        float verticalValue = ApplyDeadZone(actions.lookAction.Value.y);
         Vector2 lookVector = new Vector2(horizontalValue, verticalValue);
         if (lookVector.sqrMagnitude > 1)
             lookVector.Normalize();
@@ -112,6 +124,7 @@ public class InputActions : PlayerActionSet
     public PlayerAction jumpAction;
     public PlayerAction shootAction;
     public PlayerAction interactionAction;
+    public PlayerAction slideAction;
     public PlayerTwoAxisAction moveAction;
     public PlayerTwoAxisAction lookAction;
 
@@ -147,6 +160,7 @@ public class InputActions : PlayerActionSet
         crowlAction = CreatePlayerAction("Crouch");
         interactionAction = CreatePlayerAction("Interaction");
         shootAction = CreatePlayerAction("Shoot");
+        slideAction = CreatePlayerAction("Slide");
         //Look
         lookLeftAction = CreatePlayerAction("Look Left");
         lookRightAction = CreatePlayerAction("Look Right");
@@ -216,6 +230,9 @@ public class InputActions : PlayerActionSet
 
         playerActions.shootAction.AddDefaultBinding(InputController.Instance.bindingsScriptable.GetBinding("Shoot").key);
         playerActions.shootAction.AddDefaultBinding(InputController.Instance.bindingsScriptable.GetBinding("Shoot").inputControlType);
+
+        playerActions.slideAction.AddDefaultBinding(InputController.Instance.bindingsScriptable.GetBinding("Slide").key);
+        playerActions.slideAction.AddDefaultBinding(InputController.Instance.bindingsScriptable.GetBinding("Slide").inputControlType);
 
         playerActions.moveAction = playerActions.CreateTwoAxisPlayerAction(playerActions.goLeftAction, playerActions.goRightAction, playerActions.goDownAction, playerActions.goUpAction);
         playerActions.lookAction = playerActions.CreateTwoAxisPlayerAction(playerActions.lookLeftAction, playerActions.lookRightAction, playerActions.lookDownAction, playerActions.lookUpAction);

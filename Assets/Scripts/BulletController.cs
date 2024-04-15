@@ -15,9 +15,13 @@ public class BulletController : MonoBehaviour
     private void OnEnable()
     {
         StartCoroutine(AutoDestroyBullet());
+ 
+    }
+
+    public void SetVelocity(Vector3 direction)
+    {
         if (rb == null) rb = GetComponent<Rigidbody>();
-        // Apply the initial force based on bulletSpeed and the forward direction
-        rb.velocity = transform.forward * bulletSpeed;
+        rb.velocity = direction * bulletSpeed;
     }
 
     private IEnumerator AutoDestroyBullet()
