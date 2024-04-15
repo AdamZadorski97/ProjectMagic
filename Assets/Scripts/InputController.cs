@@ -8,52 +8,48 @@ public class InputController : MonoBehaviour
 {
 
     public static InputController Instance { get; private set; }
-    private InputActions player1Actions;
-    private InputActions player2Actions;
-    public InputActions Player1Actions => player1Actions;
-    public InputActions Player2Actions => player2Actions;
+    private List<InputActions> playerActionsList = new List<InputActions>();
 
-    public Vector2 player1MoveValue;
-    public Vector2 player2MoveValue;
-    public Vector2 player3MoveValue;
-    public Vector2 player1LookValue;
-    public Vector2 player2LookValue;
-    public Vector2 player3LookValue;
     [SerializeField] private float minDeadzone = .3f;
     [SerializeField] private float maxDeadzone = 1;
     public InControlManager controlManager;
-
+    public BindingProperties bindingsScriptable;
     private void Update()
     {
-        if (player1Actions != null)
+        foreach (var actions in playerActionsList)
         {
-            player1MoveValue = MoveValue(player1Actions);
-            player1LookValue = LookValue(player1Actions);
-        }
-
-        if (player2Actions != null)
-        {
-            player2MoveValue = MoveValue(player2Actions);
-            player2LookValue = LookValue(player2Actions);
+            actions.moveValue = MoveValue(actions);
+            actions.lookValue = LookValue(actions);
         }
     }
 
 
     private void InitializePlayerActions()
     {
-        player1Actions = InputActions.CreateWithDefaultBindings(minDeadzone, maxDeadzone);
-        if (InputManager.Devices.Count > 0)
+        int numberOfPlayers = Mathf.Max(2, InputManager.Devices.Count);  // Ensure at least two players
+        for (int i = 0; i < numberOfPlayers; i++)
         {
-            player1Actions.Device = InputManager.Devices[0];
-        }
-
-        player2Actions = InputActions.CreateWithDefaultBindings(minDeadzone, maxDeadzone);
-        if (InputManager.Devices.Count > 1)
-        {
-            player2Actions.Device = InputManager.Devices[1];
+            var actions = InputActions.CreateWithDefaultBindings(0,0);
+            if (i < InputManager.Devices.Count)
+            {
+                actions.Device = InputManager.Devices[i];  // Assign device if available
+            }
+            else
+            {
+                Debug.LogWarning($"Input device not found for player {i + 1}, player actions will not have a device.");
+            }
+            playerActionsList.Add(actions);
         }
     }
-
+    public InputActions GetPlayerActions(int playerId)
+    {
+        if (playerId >= 0 && playerId < playerActionsList.Count)
+        {
+            return playerActionsList[playerId];
+        }
+        Debug.LogError("No actions found for player ID: " + playerId);
+        return null;
+    }
     public void Vibrate(float intencity,  InputActions actions, float time)
     {
         actions.Device.Vibrate(intencity, intencity);
@@ -67,41 +63,26 @@ public class InputController : MonoBehaviour
     }
 
 
+
     private Vector2 MoveValue(InputActions actions)
     {
-        //float horizontalValue = Utility.ApplyDeadZone(actions.moveAction.Value.x, minDeadzone, maxDeadzone) != 0 ? Mathf.Sign(actions.moveAction.Value.x) : 0;
-        //float verticalValue = Utility.ApplyDeadZone(actions.moveAction.Value.y, minDeadzone, maxDeadzone) != 0 ? Mathf.Sign(actions.moveAction.Value.y) : 0;
-        //return new Vector2(horizontalValue, verticalValue);
-
-        float horizontalValue = Utility.ApplyDeadZone(actions.moveAction.Value.x, minDeadzone, maxDeadzone);
-        float verticalValue = Utility.ApplyDeadZone(actions.moveAction.Value.y, minDeadzone, maxDeadzone);
-
-        // Normalize the resultant vector to ensure consistent movement speed in all directions
+        // Implementation remains the same
+        float horizontalValue = Utility.ApplyDeadZone(actions.moveAction.Value.x, 0.3f, 1f);
+        float verticalValue = Utility.ApplyDeadZone(actions.moveAction.Value.y, 0.3f, 1f);
         Vector2 moveVector = new Vector2(horizontalValue, verticalValue);
         if (moveVector.sqrMagnitude > 1)
-        {
             moveVector.Normalize();
-        }
-
         return moveVector;
     }
 
     private Vector2 LookValue(InputActions actions)
     {
-        //float horizontalValue = Utility.ApplyDeadZone(actions.moveAction.Value.x, minDeadzone, maxDeadzone) != 0 ? Mathf.Sign(actions.moveAction.Value.x) : 0;
-        //float verticalValue = Utility.ApplyDeadZone(actions.moveAction.Value.y, minDeadzone, maxDeadzone) != 0 ? Mathf.Sign(actions.moveAction.Value.y) : 0;
-        //return new Vector2(horizontalValue, verticalValue);
-
-        float horizontalValue = Utility.ApplyDeadZone(actions.lookAction.Value.x, minDeadzone, maxDeadzone);
-        float verticalValue = Utility.ApplyDeadZone(actions.lookAction.Value.y, minDeadzone, maxDeadzone);
-
-        // Normalize the resultant vector to ensure consistent movement speed in all directions
+        // Implementation remains the same
+        float horizontalValue = Utility.ApplyDeadZone(actions.lookAction.Value.x, 0.3f, 1f);
+        float verticalValue = Utility.ApplyDeadZone(actions.lookAction.Value.y, 0.3f, 1f);
         Vector2 lookVector = new Vector2(horizontalValue, verticalValue);
         if (lookVector.sqrMagnitude > 1)
-        {
             lookVector.Normalize();
-        }
-
         return lookVector;
     }
 
@@ -112,23 +93,20 @@ public class InputController : MonoBehaviour
         {
             Instance = this;
             DontDestroyOnLoad(gameObject);
+            InitializePlayerActions();
         }
         else
         {
             Destroy(gameObject);
         }
-
-
-    }
-
-    private void Start()
-    {
-        InitializePlayerActions();
     }
 }
 
 public class InputActions : PlayerActionSet
 {
+    public Vector2 moveValue; // Add this line
+    public Vector2 lookValue; // Add this line
+
     public PlayerAction menuAction;
     public PlayerAction crowlAction;
     public PlayerAction jumpAction;
@@ -174,69 +152,70 @@ public class InputActions : PlayerActionSet
         lookRightAction = CreatePlayerAction("Look Right");
         lookUpAction = CreatePlayerAction("Look Up");
         lookDownAction = CreatePlayerAction("Look Down");
+
+
     }
 
     public static InputActions CreateWithDefaultBindings(float minDeadzone, float maxDeadzone)
     {
         var playerActions = new InputActions();
-        BindingProperties bindingsScriptable = ScriptableManager.Instance.bindingProperties;
 
-        playerActions.menuAction.AddDefaultBinding(bindingsScriptable.GetBinding("Menu").key);
-        playerActions.menuAction.AddDefaultBinding(bindingsScriptable.GetBinding("Menu").inputControlType);
+        playerActions.menuAction.AddDefaultBinding(InputController.Instance.bindingsScriptable.GetBinding("Menu").key);
+        playerActions.menuAction.AddDefaultBinding(InputController.Instance.bindingsScriptable.GetBinding("Menu").inputControlType);
 
-        playerActions.menuUpAction.AddDefaultBinding(bindingsScriptable.GetBinding("Menu Up").key);
-        playerActions.menuUpAction.AddDefaultBinding(bindingsScriptable.GetBinding("Menu Up").inputControlType);
+        playerActions.menuUpAction.AddDefaultBinding(InputController.Instance.bindingsScriptable.GetBinding("Menu Up").key);
+        playerActions.menuUpAction.AddDefaultBinding(InputController.Instance.bindingsScriptable.GetBinding("Menu Up").inputControlType);
 
-        playerActions.menuDownAction.AddDefaultBinding(bindingsScriptable.GetBinding("Menu Down").key);
-        playerActions.menuDownAction.AddDefaultBinding(bindingsScriptable.GetBinding("Menu Down").inputControlType);
+        playerActions.menuDownAction.AddDefaultBinding(InputController.Instance.bindingsScriptable.GetBinding("Menu Down").key);
+        playerActions.menuDownAction.AddDefaultBinding(InputController.Instance.bindingsScriptable.GetBinding("Menu Down").inputControlType);
 
-        playerActions.menuEnterAction.AddDefaultBinding(bindingsScriptable.GetBinding("Menu Enter").key);
-        playerActions.menuEnterAction.AddDefaultBinding(bindingsScriptable.GetBinding("Menu Enter").inputControlType);
+        playerActions.menuEnterAction.AddDefaultBinding(InputController.Instance.bindingsScriptable.GetBinding("Menu Enter").key);
+        playerActions.menuEnterAction.AddDefaultBinding(InputController.Instance.bindingsScriptable.GetBinding("Menu Enter").inputControlType);
 
-        playerActions.menuAction.AddDefaultBinding(bindingsScriptable.GetBinding("Menu").key);
-        playerActions.menuAction.AddDefaultBinding(bindingsScriptable.GetBinding("Menu").inputControlType);
+        playerActions.menuAction.AddDefaultBinding(InputController.Instance.bindingsScriptable.GetBinding("Menu").key);
+        playerActions.menuAction.AddDefaultBinding(InputController.Instance.bindingsScriptable.GetBinding("Menu").inputControlType);
 
-        playerActions.goLeftAction.AddDefaultBinding(bindingsScriptable.GetBinding("Go Left").key);
-        playerActions.goLeftAction.AddDefaultBinding(bindingsScriptable.GetBinding("Go Left").inputControlType);
+        playerActions.goLeftAction.AddDefaultBinding(InputController.Instance.bindingsScriptable.GetBinding("Go Left").key);
+        playerActions.goLeftAction.AddDefaultBinding(InputController.Instance.bindingsScriptable.GetBinding("Go Left").inputControlType);
 
         //Movement
-        playerActions.goLeftAction.AddDefaultBinding(bindingsScriptable.GetBinding("Go Left").key);
-        playerActions.goLeftAction.AddDefaultBinding(bindingsScriptable.GetBinding("Go Left").inputControlType);
+        playerActions.goLeftAction.AddDefaultBinding(InputController.Instance.bindingsScriptable.GetBinding("Go Left").key);
+        playerActions.goLeftAction.AddDefaultBinding(InputController.Instance.bindingsScriptable.GetBinding("Go Left").inputControlType);
 
-        playerActions.goRightAction.AddDefaultBinding(bindingsScriptable.GetBinding("Go Right").key);
-        playerActions.goRightAction.AddDefaultBinding(bindingsScriptable.GetBinding("Go Right").inputControlType);
+        playerActions.goRightAction.AddDefaultBinding(InputController.Instance.bindingsScriptable.GetBinding("Go Right").key);
+        playerActions.goRightAction.AddDefaultBinding(InputController.Instance.bindingsScriptable.GetBinding("Go Right").inputControlType);
 
-        playerActions.goUpAction.AddDefaultBinding(bindingsScriptable.GetBinding("Go Up").key);
-        playerActions.goUpAction.AddDefaultBinding(bindingsScriptable.GetBinding("Go Up").inputControlType);
+        playerActions.goUpAction.AddDefaultBinding(InputController.Instance.bindingsScriptable.GetBinding("Go Up").key);
+        playerActions.goUpAction.AddDefaultBinding(InputController.Instance.bindingsScriptable.GetBinding("Go Up").inputControlType);
 
-        playerActions.goDownAction.AddDefaultBinding(bindingsScriptable.GetBinding("Go Down").key);
-        playerActions.goDownAction.AddDefaultBinding(bindingsScriptable.GetBinding("Go Down").inputControlType);
+        playerActions.goDownAction.AddDefaultBinding(InputController.Instance.bindingsScriptable.GetBinding("Go Down").key);
+        playerActions.goDownAction.AddDefaultBinding(InputController.Instance.bindingsScriptable.GetBinding("Go Down").inputControlType);
 
 
         //Look
-        playerActions.lookLeftAction.AddDefaultBinding(bindingsScriptable.GetBinding("Look Left").key);
-        playerActions.lookLeftAction.AddDefaultBinding(bindingsScriptable.GetBinding("Look Left").inputControlType);
+        playerActions.lookLeftAction.AddDefaultBinding(InputController.Instance.bindingsScriptable.GetBinding("Look Left").key);
+        playerActions.lookLeftAction.AddDefaultBinding(InputController.Instance.bindingsScriptable.GetBinding("Look Left").inputControlType);
 
-        playerActions.lookRightAction.AddDefaultBinding(bindingsScriptable.GetBinding("Look Right").key);
-        playerActions.lookRightAction.AddDefaultBinding(bindingsScriptable.GetBinding("Look Right").inputControlType);
+        playerActions.lookRightAction.AddDefaultBinding(InputController.Instance.bindingsScriptable.GetBinding("Look Right").key);
+        playerActions.lookRightAction.AddDefaultBinding(InputController.Instance.bindingsScriptable.GetBinding("Look Right").inputControlType);
 
-        playerActions.lookUpAction.AddDefaultBinding(bindingsScriptable.GetBinding("Look Up").key);
-        playerActions.lookUpAction.AddDefaultBinding(bindingsScriptable.GetBinding("Look Up").inputControlType);
+        playerActions.lookUpAction.AddDefaultBinding(InputController.Instance.bindingsScriptable.GetBinding("Look Up").key);
+        playerActions.lookUpAction.AddDefaultBinding(InputController.Instance.bindingsScriptable.GetBinding("Look Up").inputControlType);
 
-        playerActions.lookDownAction.AddDefaultBinding(bindingsScriptable.GetBinding("Look Down").key);
-        playerActions.lookDownAction.AddDefaultBinding(bindingsScriptable.GetBinding("Look Down").inputControlType);
+        playerActions.lookDownAction.AddDefaultBinding(InputController.Instance.bindingsScriptable.GetBinding("Look Down").key);
+        playerActions.lookDownAction.AddDefaultBinding(InputController.Instance.bindingsScriptable.GetBinding("Look Down").inputControlType);
 
-        playerActions.jumpAction.AddDefaultBinding(bindingsScriptable.GetBinding("Jump").key);
-        playerActions.jumpAction.AddDefaultBinding(bindingsScriptable.GetBinding("Jump").inputControlType);
+        playerActions.jumpAction.AddDefaultBinding(InputController.Instance.bindingsScriptable.GetBinding("Jump").key);
+        playerActions.jumpAction.AddDefaultBinding(InputController.Instance.bindingsScriptable.GetBinding("Jump").inputControlType);
 
-        playerActions.crowlAction.AddDefaultBinding(bindingsScriptable.GetBinding("Crouch").key);
-        playerActions.crowlAction.AddDefaultBinding(bindingsScriptable.GetBinding("Crouch").inputControlType);
+        playerActions.crowlAction.AddDefaultBinding(InputController.Instance.bindingsScriptable.GetBinding("Crouch").key);
+        playerActions.crowlAction.AddDefaultBinding(InputController.Instance.bindingsScriptable.GetBinding("Crouch").inputControlType);
 
-        playerActions.interactionAction.AddDefaultBinding(bindingsScriptable.GetBinding("Interaction").key);
-        playerActions.interactionAction.AddDefaultBinding(bindingsScriptable.GetBinding("Interaction").inputControlType);
+        playerActions.interactionAction.AddDefaultBinding(InputController.Instance.bindingsScriptable.GetBinding("Interaction").key);
+        playerActions.interactionAction.AddDefaultBinding(InputController.Instance.bindingsScriptable.GetBinding("Interaction").inputControlType);
 
-        playerActions.shootAction.AddDefaultBinding(bindingsScriptable.GetBinding("Shoot").key);
-        playerActions.shootAction.AddDefaultBinding(bindingsScriptable.GetBinding("Shoot").inputControlType);
+        playerActions.shootAction.AddDefaultBinding(InputController.Instance.bindingsScriptable.GetBinding("Shoot").key);
+        playerActions.shootAction.AddDefaultBinding(InputController.Instance.bindingsScriptable.GetBinding("Shoot").inputControlType);
 
         playerActions.moveAction = playerActions.CreateTwoAxisPlayerAction(playerActions.goLeftAction, playerActions.goRightAction, playerActions.goDownAction, playerActions.goUpAction);
         playerActions.lookAction = playerActions.CreateTwoAxisPlayerAction(playerActions.lookLeftAction, playerActions.lookRightAction, playerActions.lookDownAction, playerActions.lookUpAction);

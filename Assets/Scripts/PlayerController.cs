@@ -1,3 +1,4 @@
+using InControl;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -11,7 +12,9 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float moveSpeed;
     [SerializeField] private LayerMask groundMask;
 
-
+    private int playerID;
+    private InputDevice inputDevice;
+    private InputActions playerActions;
     private Vector2 inputMoveVector;
     private Vector2 inputLookVector;
     private float verticalVelocity = 0;
@@ -22,12 +25,27 @@ public class PlayerController : MonoBehaviour
     private void Start()
     {
         characterController = GetComponent<CharacterController>();
+        SetPlayerActions();
     }
-
+    private void SetPlayerActions()
+    {
+        // Adjust player ID for 0-based index if necessary
+        playerActions = InputController.Instance.GetPlayerActions(playerID - 1);
+        if (playerActions == null)
+        {
+            Debug.LogError($"Player actions not initialized for player ID: {playerID}");
+        }
+    }
     void Update()
     {
-        inputMoveVector = InputController.Instance.player1MoveValue;
-        inputLookVector = InputController.Instance.player1LookValue;
+        if (playerActions == null)
+        {
+            Debug.LogError("Player actions are not initialized for player ID: " + playerID);
+            return; // Skip update if playerActions is null to avoid NullReferenceException
+        }
+        inputMoveVector = playerActions.moveValue;
+        inputLookVector = playerActions.lookValue;
+
         IsGrounded();
         HandleMovement();
         HandleFalling();
@@ -40,18 +58,25 @@ public class PlayerController : MonoBehaviour
 
         HandleRotation();
     }
-
+    public void SetID(int _id, InputDevice _inputDevice)
+    {
+        playerID = _id;
+        inputDevice = _inputDevice;
+        playerActions = InputController.Instance.GetPlayerActions(playerID - 1);  // Adjust for 0-based index
+        Debug.Log($"SetID called with ID: {playerID} and device: {inputDevice}");
+    }
     private void HandleJump()
     {
-        if (InputController.Instance.Player1Actions.jumpAction.WasPressed && IsGrounded())
+        if (playerActions.jumpAction.WasPressed)
         {
+            Debug.Log("Jump");
             verticalVelocity = Mathf.Sqrt(2 * jumpForce * gravity); // Initial jump velocity
         }
     }
 
     private void HandleMovement()
     {
-        Vector3 move = new Vector3(inputMoveVector.x, verticalVelocity, inputMoveVector.y) * moveSpeed * Time.deltaTime;
+        Vector3 move = new Vector3(playerActions.moveValue.x, verticalVelocity, playerActions.moveValue.y) * moveSpeed * Time.deltaTime;
         characterController.Move(move);
     }
 
@@ -71,7 +96,7 @@ public class PlayerController : MonoBehaviour
     }
     private void HandleShooting()
     {
-        if (InputController.Instance.Player1Actions.shootAction.WasPressed)
+        if (playerActions.shootAction.WasPressed)
         {
             GameObject bullet = ObjectPool.Instance.GetFromPool();
             bullet.transform.position = buletSpawnPoint.position;  // Set the position to the bullet spawn point
