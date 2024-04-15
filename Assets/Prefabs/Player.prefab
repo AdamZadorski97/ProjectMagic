@@ -302,7 +302,7 @@ MonoBehaviour:
   slideSpeed: 12
   slideDuration: 0.5
   meshTransform: {fileID: 5448977216053864027}
-  verticalVelocity: 0
+  currentVelocity: {x: 0, y: 0, z: 0}
   inputDirection: {x: 0, y: 0, z: 0}
   buletSpawnPoint: {fileID: 7851215827224138206}
   shootingForce: 10
