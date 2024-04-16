@@ -71,7 +71,7 @@ public class PlayerController : MonoBehaviour
             StartSliding();
         }
         HandleSliding();
-
+        HandleClimbing();
 
         if (playerActions.runAction.WasPressed)
         {
@@ -79,61 +79,57 @@ public class PlayerController : MonoBehaviour
             isRunning = !isRunning;
         }
 
-        if (isClimbing)
-        {
-            Vector3 climbDirection = Vector3.zero;
-            if (ladderSide == LadderSide.left)
-            {
-                if (playerActions.moveValue.x > 0|| playerActions.moveValue.x < 0)
-                {
-                    climbDirection = new Vector3(0, ladderClimbSpeed * (playerActions.moveValue.x * (-1)), 0);
-                }
-                if(playerActions.moveValue.x > 0 && IsGrounded())
-                {
-                    isClimbing = false;
-                }
 
-            }
-            if (ladderSide == LadderSide.right)
-            {
-                if (playerActions.moveValue.x > 0 || playerActions.moveValue.x < 0)
-                {
-                    climbDirection = new Vector3(0, ladderClimbSpeed * (playerActions.moveValue.x * (1)), 0);
-                }
-                if (playerActions.moveValue.x < 0 && IsGrounded())
-                {
-                    isClimbing = false;
-                }
-            }
-               
-            if (ladderSide == LadderSide.top)
-            {
-                if (playerActions.moveValue.y > 0 || playerActions.moveValue.y < 0)
-                {
-                    climbDirection = new Vector3(0, ladderClimbSpeed * playerActions.moveValue.y, 0);
-                }
-                if (playerActions.moveValue.y < 0 && IsGrounded())
-                {
-                    isClimbing = false;
-                }
-            }
-
-            if (ladderSide == LadderSide.bottom)
-            {
-                if (playerActions.moveValue.y > 0 || playerActions.moveValue.y < 0)
-                {
-                    climbDirection = new Vector3(0, ladderClimbSpeed * (playerActions.moveValue.y *(-1)), 0);
-                }
-                if (playerActions.moveValue.y > 0 && IsGrounded())
-                {
-                    isClimbing = false;
-                }
-            }
-            characterController.Move(climbDirection * Time.deltaTime);
-
-        }
 
         CheckWallCollision();
+    }
+
+
+    private void HandleClimbing()
+    {
+        Vector3 climbDirection = Vector3.zero;
+        float inputX = playerActions.moveValue.x;
+        float inputY = playerActions.moveValue.y;
+
+        switch (ladderSide)
+        {
+            case LadderSide.left:
+                climbDirection = GetClimbDirection(inputX, true);
+                CheckClimbEnd(inputX > 0);
+                break;
+            case LadderSide.right:
+                climbDirection = GetClimbDirection(inputX, false);
+                CheckClimbEnd(inputX < 0);
+                break;
+            case LadderSide.top:
+                climbDirection = GetClimbDirection(inputY, false);
+                CheckClimbEnd(inputY < 0);
+                break;
+            case LadderSide.bottom:
+                climbDirection = GetClimbDirection(inputY, true);
+                CheckClimbEnd(inputY > 0);
+                break;
+        }
+
+        characterController.Move(climbDirection * Time.deltaTime);
+    }
+
+    private Vector3 GetClimbDirection(float input, bool invert)
+    {
+        if (input != 0)
+        {
+            float directionMultiplier = invert ? -1 : 1;
+            return new Vector3(0, ladderClimbSpeed * input * directionMultiplier, 0);
+        }
+        return Vector3.zero;
+    }
+
+    private void CheckClimbEnd(bool shouldStopClimbing)
+    {
+        if (shouldStopClimbing && IsGrounded())
+        {
+            isClimbing = false;
+        }
     }
     private void StartSliding()
     {
