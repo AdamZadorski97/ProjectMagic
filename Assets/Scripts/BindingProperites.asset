@@ -132,3 +132,10 @@ MonoBehaviour:
     controllerSprite: {fileID: 0}
     mouseSprite: {fileID: 0}
     keyboardSprite: {fileID: 0}
+  - name: Run
+    inputControlType: 5
+    mouse: 0
+    key: 38
+    controllerSprite: {fileID: 0}
+    mouseSprite: {fileID: 0}
+    keyboardSprite: {fileID: 0}
