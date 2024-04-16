@@ -83,13 +83,52 @@ public class PlayerController : MonoBehaviour
         {
             Vector3 climbDirection = Vector3.zero;
             if (ladderSide == LadderSide.left)
-                climbDirection = new Vector3(0, ladderClimbSpeed * (playerActions.moveValue.x*(-1)), 0);
+            {
+                if (playerActions.moveValue.x > 0|| playerActions.moveValue.x < 0)
+                {
+                    climbDirection = new Vector3(0, ladderClimbSpeed * (playerActions.moveValue.x * (-1)), 0);
+                }
+                if(playerActions.moveValue.x > 0 && IsGrounded())
+                {
+                    isClimbing = false;
+                }
+
+            }
             if (ladderSide == LadderSide.right)
-                climbDirection = new Vector3(0, ladderClimbSpeed * (playerActions.moveValue.x * (1)), 0);
+            {
+                if (playerActions.moveValue.x > 0 || playerActions.moveValue.x < 0)
+                {
+                    climbDirection = new Vector3(0, ladderClimbSpeed * (playerActions.moveValue.x * (1)), 0);
+                }
+                if (playerActions.moveValue.x < 0 && IsGrounded())
+                {
+                    isClimbing = false;
+                }
+            }
+               
             if (ladderSide == LadderSide.top)
-                climbDirection = new Vector3(0, ladderClimbSpeed * playerActions.moveValue.y, 0);
+            {
+                if (playerActions.moveValue.y > 0 || playerActions.moveValue.y < 0)
+                {
+                    climbDirection = new Vector3(0, ladderClimbSpeed * playerActions.moveValue.y, 0);
+                }
+                if (playerActions.moveValue.y < 0 && IsGrounded())
+                {
+                    isClimbing = false;
+                }
+            }
+
             if (ladderSide == LadderSide.bottom)
-                climbDirection = new Vector3(0, ladderClimbSpeed * (playerActions.moveValue.y * (-1)), 0);
+            {
+                if (playerActions.moveValue.y > 0 || playerActions.moveValue.y < 0)
+                {
+                    climbDirection = new Vector3(0, ladderClimbSpeed * (playerActions.moveValue.y *(-1)), 0);
+                }
+                if (playerActions.moveValue.y > 0 && IsGrounded())
+                {
+                    isClimbing = false;
+                }
+            }
             characterController.Move(climbDirection * Time.deltaTime);
 
         }
