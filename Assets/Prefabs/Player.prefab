@@ -290,16 +290,17 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   angularSpeed: 5
-  jumpForce: 3
+  jumpForce: 2
   gravity: 35
   acceleration: 35
   deceleration: 80
   slideDeceleration: 5
-  moveSpeed: 6
+  walkSpeed: 2
+  runSpeed: 8
   groundMask:
     serializedVersion: 2
     m_Bits: 64
-  slideSpeed: 12
+  slideSpeed: 30
   slideDuration: 0.5
   meshTransform: {fileID: 5448977216053864027}
   currentVelocity: {x: 0, y: 0, z: 0}

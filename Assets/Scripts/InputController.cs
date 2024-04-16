@@ -125,6 +125,7 @@ public class InputActions : PlayerActionSet
     public PlayerAction shootAction;
     public PlayerAction interactionAction;
     public PlayerAction slideAction;
+    public PlayerAction runAction;
     public PlayerTwoAxisAction moveAction;
     public PlayerTwoAxisAction lookAction;
 
@@ -161,6 +162,7 @@ public class InputActions : PlayerActionSet
         interactionAction = CreatePlayerAction("Interaction");
         shootAction = CreatePlayerAction("Shoot");
         slideAction = CreatePlayerAction("Slide");
+        runAction = CreatePlayerAction("Run");
         //Look
         lookLeftAction = CreatePlayerAction("Look Left");
         lookRightAction = CreatePlayerAction("Look Right");
@@ -233,6 +235,9 @@ public class InputActions : PlayerActionSet
 
         playerActions.slideAction.AddDefaultBinding(InputController.Instance.bindingsScriptable.GetBinding("Slide").key);
         playerActions.slideAction.AddDefaultBinding(InputController.Instance.bindingsScriptable.GetBinding("Slide").inputControlType);
+
+        playerActions.runAction.AddDefaultBinding(InputController.Instance.bindingsScriptable.GetBinding("Run").key);
+        playerActions.runAction.AddDefaultBinding(InputController.Instance.bindingsScriptable.GetBinding("Run").inputControlType);
 
         playerActions.moveAction = playerActions.CreateTwoAxisPlayerAction(playerActions.goLeftAction, playerActions.goRightAction, playerActions.goDownAction, playerActions.goUpAction);
         playerActions.lookAction = playerActions.CreateTwoAxisPlayerAction(playerActions.lookLeftAction, playerActions.lookRightAction, playerActions.lookDownAction, playerActions.lookUpAction);

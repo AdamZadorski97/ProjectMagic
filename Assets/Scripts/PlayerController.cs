@@ -12,12 +12,14 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float acceleration = 3f;
     [SerializeField] private float deceleration = 3f;
     [SerializeField] private float slideDeceleration = 5f;  // Deceleration rate of the slide
-    [SerializeField] private float moveSpeed;
+    [SerializeField] private float walkSpeed = 5f;
+    [SerializeField] private float runSpeed = 10f;
     [SerializeField] private LayerMask groundMask;
     [SerializeField] private float slideSpeed = 10f;  // Speed of the slide
     [SerializeField] private float slideDuration = 0.5f;  // How long the slide lasts
     [SerializeField] private Transform meshTransform;
 
+    private bool isRunning = false;
     private bool isSliding = false;  // Track if currently sliding
     private float slideTimer = 0;
     private int playerID;
@@ -54,15 +56,18 @@ public class PlayerController : MonoBehaviour
         HandleShooting();
         HandleRotation();
 
-        if (playerActions.slideAction.WasPressed && !isSliding && currentVelocity.magnitude > 0)
+        if (playerActions.slideAction.WasPressed && !isSliding && currentVelocity.magnitude > 0 && isRunning)
         {
             Debug.Log("start Sliding");
             StartSliding();
         }
+            HandleSliding();
+        
 
-        if (isSliding)
+        if (playerActions.runAction.WasPressed)
         {
-            UpdateSliding();
+            // Toggle the running state
+            isRunning = !isRunning;
         }
     }
     private void StartSliding()
@@ -70,12 +75,12 @@ public class PlayerController : MonoBehaviour
         meshTransform.localScale = new Vector3(1, 0.25f, 1);
         isSliding = true;
         slideTimer = slideDuration;
-        currentVelocity = transform.forward * 8;  // Set slide velocity in the current forward direction
+        currentVelocity = transform.forward * slideSpeed;  // Set slide velocity in the current forward direction
     }
 
 
 
-    private void UpdateSliding()
+    private void HandleSliding()
     {
 
         if (!isSliding)
@@ -93,6 +98,8 @@ public class PlayerController : MonoBehaviour
             currentVelocity = Vector3.zero;  // Ensure the character stops if any residual velocity remains
             meshTransform.localScale = new Vector3(1, 1f, 1);  // Reset any transformations made during the slide
         }
+        Vector3 displacement = new Vector3(currentVelocity.x, verticalVelocity, currentVelocity.z) * Time.deltaTime;
+        characterController.Move(displacement);
     }
     public void LateUpdate()
     {
@@ -150,9 +157,10 @@ public class PlayerController : MonoBehaviour
 
         if (hasInput)
         {
+            float moveSpeed = isRunning ? runSpeed : walkSpeed;
             inputDirection.Normalize();
             float targetSpeed = inputDirection.magnitude * moveSpeed;
-            Vector3 targetVelocity = inputDirection.normalized * targetSpeed;
+            Vector3 targetVelocity = inputDirection.normalized * targetSpeed + new Vector3(0, verticalVelocity,0);
             float smoothTime = (1 / acceleration);
             currentVelocity = Vector3.SmoothDamp(currentVelocity, targetVelocity, ref currentVelocity, smoothTime);
         }
@@ -162,7 +170,7 @@ public class PlayerController : MonoBehaviour
             if (currentVelocity.magnitude > 0.01f)
             {
                 float smoothTime = (1 / deceleration);
-                currentVelocity = Vector3.SmoothDamp(currentVelocity, Vector3.zero, ref currentVelocity, smoothTime);
+                currentVelocity = Vector3.SmoothDamp(currentVelocity + new Vector3(0, verticalVelocity, 0), Vector3.zero, ref currentVelocity, smoothTime);
             }
             else
             {
@@ -173,8 +181,7 @@ public class PlayerController : MonoBehaviour
         // Apply gravity and movement
         if (!IsGrounded())
             verticalVelocity -= gravity * Time.deltaTime;
-        else
-            verticalVelocity = 0;
+   
 
         Vector3 displacement = new Vector3(currentVelocity.x, verticalVelocity, currentVelocity.z) * Time.deltaTime;
         characterController.Move(displacement);
@@ -241,6 +248,4 @@ public class PlayerController : MonoBehaviour
             return false;
         }
     }
-
-
 }
