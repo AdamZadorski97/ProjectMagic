@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using InControl;
 using System;
-
+using Sirenix.OdinInspector;
 
 public class FirstPersonController : MonoBehaviour
 {
@@ -30,7 +30,7 @@ public class FirstPersonController : MonoBehaviour
     private int playerID;
     private InputDevice inputDevice;
     public InputActions playerActions;
-    private float verticalVelocity = 0;
+   [ShowInInspector] private float verticalVelocity = 0;
     [SerializeField] private Vector3 currentVelocity = Vector3.zero;
     [SerializeField] Vector3 moveDirection;
     private CharacterController characterController;
@@ -209,9 +209,10 @@ public class FirstPersonController : MonoBehaviour
         if (playerActions.jumpAction.WasPressed && IsGrounded())
         {
             Debug.Log("Jump");
-            verticalVelocity = Mathf.Sqrt(2 * playerData.jumpForce * currentGravity); // Initial jump velocity
+            verticalVelocity = Mathf.Sqrt(2 * playerData. jumpForce * playerData.gravity); // Initial jump velocity
         }
     }
+
 
 
 
@@ -227,9 +228,15 @@ public class FirstPersonController : MonoBehaviour
         float speed = isRunning ? playerData.runSpeed : playerData.walkSpeed;
         Vector3 targetVelocity = desiredDirection * speed;
 
-        // Smoothly transition to the target velocity
-        currentVelocity = Vector3.SmoothDamp(currentVelocity, targetVelocity, ref velocitySmoothDampRef, playerData.movementSmoothing);
+        // Extract the current horizontal velocity
+        Vector3 currentHorizontalVelocity = new Vector3(currentVelocity.x, 0, currentVelocity.z);
+        // Smoothly transition the horizontal velocity
+        Vector3 smoothedHorizontalVelocity = Vector3.SmoothDamp(currentHorizontalVelocity, targetVelocity, ref velocitySmoothDampRef, playerData.movementSmoothing);
 
+        // Update currentVelocity by combining the smoothed horizontal velocity with the unsmoothed vertical velocity
+        currentVelocity = new Vector3(smoothedHorizontalVelocity.x, currentVelocity.y, smoothedHorizontalVelocity.z);
+
+        // Move the character controller
         characterController.Move(currentVelocity * Time.deltaTime);
 
         if (currentVelocity.magnitude > 0.1f) // Only shake the head when actually moving
