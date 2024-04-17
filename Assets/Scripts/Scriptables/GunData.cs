@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "New Gun", menuName = "Weapon/Gun")]
@@ -12,4 +13,7 @@ public class GunData : ScriptableObject
     public float fireRate;               // Bullets per second
     public float accuracy;               // Base accuracy of the gun (0 = perfect accuracy, higher values = more spread)
     public float reloadTimeVariability;  // Variability in reload time (to simulate realism in reload speed)
+    public List<AudioClip> shootSounds = new List<AudioClip>();
+    public List<AudioClip> reloadSounds = new List<AudioClip>();
+    public List<AudioClip> emptyMagazineSound = new List<AudioClip>();
 }

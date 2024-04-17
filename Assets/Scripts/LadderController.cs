@@ -5,25 +5,20 @@ using UnityEngine;
 public class LadderController : MonoBehaviour
 {
     public float climbSpeed = 3.0f; // Speed at which the player will climb
-    public LadderSide isSide;
+   
     private void OnTriggerEnter(Collider other)
     {
-        if (other.GetComponent<PlayerController>())
+        if (other.GetComponent<FirstPersonController>())
         {
-            other.GetComponent<PlayerController>().EnableLadderClimbing(true, isSide);
+            other.GetComponent<FirstPersonController>().EnableLadderClimbing(true);
         }
     }
 
     private void OnTriggerExit(Collider other)
     {
-        if (other.GetComponent<PlayerController>())
+        if (other.GetComponent<FirstPersonController>())
         {
-            other.GetComponent<PlayerController>().EnableLadderClimbing(false, isSide);
+            other.GetComponent<FirstPersonController>().EnableLadderClimbing(false);
         }
     }
-}
-
-public enum LadderSide
-{
-    top, bottom, left, right
 }

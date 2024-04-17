@@ -26,7 +26,6 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float verticalInput;
 
 
-    private LadderSide ladderSide;
     private bool isRunning = false;
     private bool isSliding = false;  // Track if currently sliding
     private float slideTimer = 0;
@@ -64,7 +63,6 @@ public class PlayerController : MonoBehaviour
         HandleJump();
         HandleRotation();
         HandleSliding();
-        HandleClimbing();
         CheckWallCollision();
     }
     public void HandleRunning()
@@ -75,34 +73,7 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    private void HandleClimbing()
-    {
-        Vector3 climbDirection = Vector3.zero;
-        float inputX = playerActions.moveValue.x;
-        float inputY = playerActions.moveValue.y;
-
-        switch (ladderSide)
-        {
-            case LadderSide.left:
-                climbDirection = GetClimbDirection(inputX, true);
-                CheckClimbEnd(inputX > 0);
-                break;
-            case LadderSide.right:
-                climbDirection = GetClimbDirection(inputX, false);
-                CheckClimbEnd(inputX < 0);
-                break;
-            case LadderSide.top:
-                climbDirection = GetClimbDirection(inputY, false);
-                CheckClimbEnd(inputY < 0);
-                break;
-            case LadderSide.bottom:
-                climbDirection = GetClimbDirection(inputY, true);
-                CheckClimbEnd(inputY > 0);
-                break;
-        }
-
-        characterController.Move(climbDirection * Time.deltaTime);
-    }
+   
 
     private Vector3 GetClimbDirection(float input, bool invert)
     {
@@ -129,10 +100,9 @@ public class PlayerController : MonoBehaviour
         currentVelocity = transform.forward * slideSpeed;  // Set slide velocity in the current forward direction
     }
 
-    public void EnableLadderClimbing(bool enable, LadderSide _ladderSide)
+    public void EnableLadderClimbing(bool enable)
     {
         isClimbing = enable;
-        ladderSide = _ladderSide;
         if (enable)
         {
             gravity = 0; // Turn off gravity while climbing

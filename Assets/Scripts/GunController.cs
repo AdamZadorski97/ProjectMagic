@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 public class GunController : MonoBehaviour
 {
@@ -10,10 +11,12 @@ public class GunController : MonoBehaviour
     private float lastShotTime;
     private bool isReloading = false;
     private float nextTimeToFire = 0f; // For handling fire rate
+    private AudioSource audioSource;
 
     private void Start()
     {
         currentAmmo = gunData.maxAmmo;  // Initialize ammo
+        audioSource = GetComponent<AudioSource>();  // Get the AudioSource component
     }
 
     private void Update()
@@ -25,43 +28,56 @@ public class GunController : MonoBehaviour
 
         if (playerController.playerActions.shootAction.IsPressed && Time.time >= nextTimeToFire)
         {
-            if (currentAmmo > 0)
-            {
-                Shoot();  // Proceed to shoot if there is ammo
-            }
-            else
-            {
-                StartCoroutine(Reload());  // Start reloading if ammo is depleted
-            }
+
+            TryShoot();  // Proceed to shoot if there is ammo
         }
     }
 
-    private void Shoot()
+    private void TryShoot()
     {
-        nextTimeToFire = Time.time + 1f / gunData.fireRate;  // Schedule the next shot based on the fire rate
-        lastShotTime = Time.time;  // Update last shot time
-        currentAmmo--;  // Decrement ammo count
+   
 
-        // Instantiate bullet and set its initial properties
+        nextTimeToFire = Time.time + 1f / gunData.fireRate;  // Schedule the next shot
+        lastShotTime = Time.time;
+        if (currentAmmo <= 0)
+        {
+            PlayRandomSound(gunData.emptyMagazineSound);
+            StartCoroutine(Reload());
+            return;  // Check if there is ammo and play empty magazine sound if not
+        }
+        currentAmmo--;
+
+        PlayRandomSound(gunData.shootSounds);  // Play a random shooting sound
+
+        Ray ray = Camera.main.ScreenPointToRay(new Vector3(Screen.width / 2, Screen.height / 2));
+        RaycastHit hit;
+        Vector3 targetPoint = ray.GetPoint(1000); // Default if no hit
+
+        if (Physics.Raycast(ray, out hit, gunData.maxDistance))
+            targetPoint = hit.point;
+
+        Vector3 shootDirection = (targetPoint - bulletSpawnPosition.position).normalized;
         GameObject bullet = ObjectPool.Instance.GetFromPool("Bullet");
         bullet.transform.position = bulletSpawnPosition.position;
-        Vector3 shootDirection = bulletSpawnPosition.forward;
-
-        // Apply accuracy spread
-        float accuracySpread = Random.Range(-gunData.accuracy, gunData.accuracy);
-        shootDirection = Quaternion.Euler(0, accuracySpread, 0) * shootDirection;
-
         bullet.GetComponent<BulletController>().SetVelocity(shootDirection, gunData.startSpeed);
-
-        //// Apply recoil effect
-        //playerController.ApplyRecoil(gunData.recoil);
     }
 
     private IEnumerator Reload()
     {
+
         isReloading = true;
+        PlayRandomSound(gunData.reloadSounds);
         yield return new WaitForSeconds(gunData.reloadSpeed);
         currentAmmo = gunData.maxAmmo;
         isReloading = false;
+    }
+
+    private void PlayRandomSound(List<AudioClip> clips)
+    {
+        if (clips.Count == 0)
+            return; // Return if there are no clips
+
+        int index = Random.Range(0, clips.Count); // Choose a random index
+        audioSource.PlayOneShot(clips[index]); // Play the selected audio clip
     }
 }

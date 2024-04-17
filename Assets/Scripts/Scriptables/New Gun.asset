@@ -12,12 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bab708ce8630639428d158ad94ad864f, type: 3}
   m_Name: New Gun
   m_EditorClassIdentifier: 
-  startSpeed: 50
+  startSpeed: 200
   bulletDeceleration: 1
   maxDistance: 50
   recoil: 2
   reloadSpeed: 2
-  maxAmmo: 10
+  maxAmmo: 30
   fireRate: 5
   accuracy: 0
   reloadTimeVariability: 1

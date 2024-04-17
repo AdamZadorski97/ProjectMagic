@@ -16,7 +16,7 @@ public class FirstPersonController : MonoBehaviour
     [SerializeField] private float verticalInput;
     [SerializeField] private Transform headPivot;
     [SerializeField] private Camera playerCamera;
-
+    private float lastStepTime = 0f;
     private bool canWallJump = false;
     private float timeSinceWallHit = 0f;
     private Vector3 lastWallNormal;
@@ -24,10 +24,12 @@ public class FirstPersonController : MonoBehaviour
     private float accumulatedTime = 0f;
     private float lastTimeMoving = 0f;
     private bool isClimbing = false;
+    private float rollVelocity; // To smooth the roll effect
+    private float currentRoll;  // Current roll angle of the camera
+    private bool justLanded = false;
     private float currentRotationVelocity;
     private float verticalRotation = 0.0f;
     private Vector3 velocitySmoothDampRef;
-    private LadderSide ladderSide;
     private bool isRunning = false;
     private bool isSliding = false;  // Track if currently sliding
     private float slideTimer = 0;
@@ -35,7 +37,8 @@ public class FirstPersonController : MonoBehaviour
     private int playerID;
     private InputDevice inputDevice;
     public InputActions playerActions;
-   [ShowInInspector] private float verticalVelocity = 0;
+    private AudioSource audioSource;
+    [ShowInInspector] private float verticalVelocity = 0;
     [SerializeField] private Vector3 currentVelocity = Vector3.zero;
     [SerializeField] Vector3 moveDirection;
     private CharacterController characterController;
@@ -47,6 +50,7 @@ public class FirstPersonController : MonoBehaviour
     private void Start()
     {
         characterController = GetComponent<CharacterController>();
+        audioSource = GetComponent<AudioSource>();
         SetPlayerActions();
     }
     private void SetPlayerActions()
@@ -60,6 +64,7 @@ public class FirstPersonController : MonoBehaviour
     }
     void Update()
     {
+        moveDirection = new Vector3(playerActions.moveValue.x, 0, playerActions.moveValue.y);
         HandleMovement();
         HandleRotation();
         HandleFalling();
@@ -83,30 +88,18 @@ public class FirstPersonController : MonoBehaviour
             return;
 
         Vector3 climbDirection = Vector3.zero;
-        float inputX = playerActions.moveValue.x;
         float inputY = playerActions.moveValue.y;
 
-        switch (ladderSide)
+        climbDirection = GetClimbDirection(inputY, false);
+        if (inputY < 0) CheckClimbEnd(true);
+        characterController.Move(climbDirection * Time.deltaTime);
+
+        if (playerActions.jumpAction.WasPressed)
         {
-            case LadderSide.left:
-                climbDirection = GetClimbDirection(inputX, true);
-                CheckClimbEnd(inputX > 0);
-                break;
-            case LadderSide.right:
-                climbDirection = GetClimbDirection(inputX, false);
-                CheckClimbEnd(inputX < 0);
-                break;
-            case LadderSide.top:
-                climbDirection = GetClimbDirection(inputY, false);
-                CheckClimbEnd(inputY < 0);
-                break;
-            case LadderSide.bottom:
-                climbDirection = GetClimbDirection(inputY, true);
-                CheckClimbEnd(inputY > 0);
-                break;
+            isClimbing = false;
         }
 
-        characterController.Move(climbDirection * Time.deltaTime);
+
     }
 
     private Vector3 GetClimbDirection(float input, bool invert)
@@ -125,32 +118,48 @@ public class FirstPersonController : MonoBehaviour
         {
             isClimbing = false;
         }
+
     }
     private void StartSliding()
     {
+        float slideSpeed = isRunning ? playerData.slideSpeedRun : playerData.slideSpeedWalk;
+        if (moveDirection.z < 0)
+        {
+            return;
+        }
+        if (moveDirection.z == 0)
+        {
+            verticalVelocity = Mathf.Sqrt(2 * playerData.jumpForce * playerData.gravity);
+            currentVelocity = (transform.forward * playerData.slideSpeedWalk) + new Vector3(0, verticalVelocity, 0);
+
+        }
+        else
+        {
+            currentVelocity = transform.forward * slideSpeed;
+        }
         meshTransform.DOScale(new Vector3(1, 0.25f, 1), 0.2f);
         isSliding = true;
         slideTimer = playerData.slideDuration;
-        currentVelocity = transform.forward * playerData.slideSpeed;  // Set slide velocity in the current forward direction
+
+        // Set slide velocity in the current forward direction
     }
 
-    public void EnableLadderClimbing(bool enable, LadderSide _ladderSide)
+    public void EnableLadderClimbing(bool enable)
     {
         isClimbing = enable;
-        ladderSide = _ladderSide;
         if (enable)
         {
             currentGravity = 0; // Turn off gravity while climbing
         }
         else
         {
-            currentGravity = 20; // Turn on gravity when not climbing
+            currentGravity = playerData.gravity; // Turn on gravity when not climbing
         }
     }
 
     private void HandleSliding()
     {
-        if (playerActions.slideAction.WasPressed && !isSliding && currentVelocity.magnitude > 0 && isRunning)
+        if (playerActions.slideAction.WasPressed && !isSliding && currentVelocity.magnitude > 0)
         {
             Debug.Log("start Sliding");
             StartSliding();
@@ -211,6 +220,11 @@ public class FirstPersonController : MonoBehaviour
     }
     private void HandleJump()
     {
+        if (isSliding)
+        {
+            return;
+        }
+
         if (playerActions.jumpAction.WasPressed && IsGrounded())
         {
             verticalVelocity = Mathf.Sqrt(2 * playerData.jumpForce * playerData.gravity); // Normal jump
@@ -220,7 +234,7 @@ public class FirstPersonController : MonoBehaviour
             // Wall jump logic
             Vector3 jumpDirection = Vector3.Reflect(transform.forward, lastWallNormal).normalized;
             verticalVelocity = Mathf.Sqrt(2 * playerData.jumpForce * playerData.gravity); // Wall jump velocity
-            currentVelocity = jumpDirection * playerData.walkSpeed; // Modify this to set the desired jump strength
+            currentVelocity = jumpDirection * playerData.walkSpeedMax; // Modify this to set the desired jump strength
             RotateTowards(jumpDirection); // Rotate player to face the jump direction
             canWallJump = false; // Reset wall jump ability
         }
@@ -234,7 +248,7 @@ public class FirstPersonController : MonoBehaviour
     private IEnumerator SmoothRotate(Quaternion targetRotation)
     {
         float time = 0;
-        while (time < 3)
+        while (time < 1)
         {
             transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, time);
             time += Time.deltaTime / playerData.rotationFromWallSmoothing; // rotationSmoothing controls the speed of the rotation
@@ -244,27 +258,52 @@ public class FirstPersonController : MonoBehaviour
     }
     private void HandleMovement()
     {
-        if (isSliding)
+        if (isSliding || isClimbing)
             return;
 
         Vector3 input = new Vector3(playerActions.moveValue.x, 0, playerActions.moveValue.y);
         Vector3 forward = transform.forward;
         Vector3 right = transform.right;
         Vector3 desiredDirection = (input.z * forward + input.x * right).normalized;
-        float speed = isRunning ? playerData.runSpeed : playerData.walkSpeed;
+        float speed = isRunning ? playerData.runSpeedMax : playerData.walkSpeedMax;
         Vector3 targetVelocity = desiredDirection * speed;
 
-        // Extract the current horizontal velocity
         Vector3 currentHorizontalVelocity = new Vector3(currentVelocity.x, 0, currentVelocity.z);
-        // Smoothly transition the horizontal velocity
         Vector3 smoothedHorizontalVelocity = Vector3.SmoothDamp(currentHorizontalVelocity, targetVelocity, ref velocitySmoothDampRef, playerData.movementSmoothing);
 
-        // Update currentVelocity by combining the smoothed horizontal velocity with the unsmoothed vertical velocity
         currentVelocity = new Vector3(smoothedHorizontalVelocity.x, currentVelocity.y, smoothedHorizontalVelocity.z);
-
-        // Move the character controller
         characterController.Move(currentVelocity * Time.deltaTime);
 
+        // Decide which footstep sounds to play based on speed
+        if (isRunning)
+        {
+            HandleFootsteps(playerData.runFootstepSounds, playerData.stepRateRun);
+        }
+        else
+        {
+            HandleFootsteps(playerData.walkFootstepSounds, playerData.stepRateWalk);
+        }
+
+        HandleHeadBump();
+    }
+    private void HandleFootsteps(List<AudioClip> footstepSounds, float stepRate)
+    {
+        if (currentVelocity.magnitude > 0.1f && Time.time - lastStepTime > stepRate)
+        {
+            lastStepTime = Time.time;
+            PlayRandomSound(footstepSounds);
+        }
+    }
+    private void PlayRandomSound(List<AudioClip> clips)
+    {
+        if (clips.Count == 0)
+            return;
+
+        int index = UnityEngine.Random.Range(0, clips.Count);
+        audioSource.PlayOneShot(clips[index]);
+    }
+    private void HandleHeadBump()
+    {
         if (currentVelocity.magnitude > 0.1f) // Only shake the head when actually moving
         {
             accumulatedTime += Time.deltaTime;
@@ -283,12 +322,11 @@ public class FirstPersonController : MonoBehaviour
             // Smoothly reset head rotation when not moving
             headPivot.transform.localRotation = Quaternion.Slerp(headPivot.transform.localRotation, Quaternion.Euler(Vector3.zero), playerData.rotationSmoothing * Time.deltaTime);
 
-            // Reset the shakePhaseOffset for continuity when movement resumes
+            // Reset the shakePhaseOffset and accumulated time for continuity when movement resumes
             shakePhaseOffset = 0f;
-            accumulatedTime = 0f; // Also reset accumulated time when not moving
+            accumulatedTime = 0f;
         }
     }
-
 
     private void HandleRotation()
     {
@@ -296,8 +334,10 @@ public class FirstPersonController : MonoBehaviour
         float verticalInput = playerActions.lookValue.y; // Assume lookValue.y is for pitch
 
         // Calculate target rotations
-        float targetHorizontalRotation = horizontalInput * playerData.angularSpeed;
-        float targetVerticalRotation = verticalInput * playerData.angularSpeed;
+
+        float cameraRotateSpeed = isRunning ? playerData.angularSpeedRun : playerData.angularSpeedWalk;
+        float targetHorizontalRotation = horizontalInput * cameraRotateSpeed;
+        float targetVerticalRotation = verticalInput * cameraRotateSpeed;
 
         // Smoothly interpolate the horizontal rotation speed
         float horizontalRotationAmount = Mathf.Lerp(currentRotationVelocity, targetHorizontalRotation, playerData.rotationSmoothing);
@@ -311,24 +351,64 @@ public class FirstPersonController : MonoBehaviour
         verticalRotation = Mathf.Clamp(verticalRotation, -playerData.maxVerticalAngle, playerData.maxVerticalAngle);
 
         // Apply vertical rotation directly to the camera
-       playerCamera.transform.localEulerAngles = new Vector3(verticalRotation, 0, 0);
+        playerCamera.transform.localEulerAngles = new Vector3(verticalRotation, 0, currentRoll);
+
+        // Roll effect based on horizontal rotation
+        HandleCameraRoll(horizontalInput);
+    }
+
+    private void HandleCameraRoll(float horizontalInput)
+    {
+        float targetRoll = horizontalInput * -5.0f; // Tweak this value to get the desired roll effect
+        currentRoll = Mathf.SmoothDamp(currentRoll, targetRoll, ref rollVelocity, playerData.rotationSmoothing);
     }
     private void HandleFalling()
     {
-        if (!IsGrounded())
+        if (isClimbing)
+            return;
+
+        bool wasGrounded = IsGrounded();
+        if (!wasGrounded)
         {
             verticalVelocity -= playerData.gravity * Time.deltaTime;  // Apply gravity if not grounded
-
         }
-        else if (verticalVelocity < 0)
+        else
         {
-            verticalVelocity = 0;  // Stop falling when grounded
+            if (verticalVelocity < 0)
+            {
+                verticalVelocity = 0;  // Stop falling when grounded
+                if (!justLanded)
+                {
+                    justLanded = true;
+                    // Trigger the squash effect when landing
+                    meshTransform.DOScale(new Vector3(1, 0.5f, 1), 0.2f).OnComplete(() =>
+                    {
+                        meshTransform.DOScale(new Vector3(1, 1, 1), 0.2f);
+                    });
+
+                    // Head shake effect on landing
+                    ShakeHeadOnLanding();
+                }
+            }
         }
         currentVelocity = new Vector3(currentVelocity.x, verticalVelocity, currentVelocity.z);
+
+        if (wasGrounded && verticalVelocity == 0 && justLanded)
+        {
+            justLanded = false;  // Reset the landing flag when the player starts moving or after the animation
+        }
     }
- 
 
+    private void ShakeHeadOnLanding()
+    {
+        // Shake the head pivot a little upon landing to add impact
+        float shakeDuration = 0.3f; // Duration of the head shake effect
+        float shakeStrength = 1f; // Strength of the shake, adjust based on desired intensity
+        int shakeVibrato = 10;      // How much vibrato (jitteriness) in the shake
+        float shakeRandomness = 90f; // Randomness of the shake angle
 
+        headPivot.DOShakeRotation(shakeDuration, new Vector3(0f, 0f, shakeStrength), shakeVibrato, shakeRandomness, false);
+    }
     private void HandleWallCollision()
     {
         if (isSliding)

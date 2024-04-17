@@ -12,22 +12,26 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: eaca2537f7f6a954199c56e0b5b5bf99, type: 3}
   m_Name: FirstPersonConfig
   m_EditorClassIdentifier: 
-  angularSpeed: 90
-  jumpForce: 4
+  angularSpeedWalk: 140
+  angularSpeedRun: 180
+  jumpForce: 6
+  wallJumpForce: 8
   gravity: 80
   movementSmoothing: 0.1
   rotationSmoothing: 0.1
+  rotationFromWallSmoothing: 0.4
   maxVerticalAngle: 80
-  shakeMagnitude: 1.5
-  shakeSpeed: 5
-  slideDeceleration: 5
-  walkSpeed: 5
-  runSpeed: 10
   groundMask:
     serializedVersion: 2
     m_Bits: 64
-  slideSpeed: 30
-  slideDuration: 0.5
+  shakeMagnitude: 1.5
+  shakeSpeed: 5
+  walkSpeedMax: 5
+  runSpeedMax: 20
+  slideSpeedWalk: 30
+  slideSpeedRun: 80
+  slideDuration: 1
+  slideDeceleration: 5
+  ladderClimbSpeed: 5
   collisionVelocityThreshold: 0.5
   speed: 5
-  ladderClimbSpeed: 3
