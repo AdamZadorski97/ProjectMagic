@@ -7,9 +7,11 @@ public class PlayerData : ScriptableObject
 {
     public float angularSpeed;
     public float jumpForce = 4f;
+    public float wallJumpForce = 6f;
     public float gravity = 9.81f;
     public float movementSmoothing = 0.1f;
     public float rotationSmoothing = 0.1f;
+    public float rotationFromWallSmoothing = 0.1f;
     public float maxVerticalAngle = 80.0f;
     public float shakeMagnitude = 2.0f;
     public float shakeSpeed = 10.0f;

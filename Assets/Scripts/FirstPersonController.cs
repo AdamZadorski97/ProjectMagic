@@ -4,6 +4,7 @@ using UnityEngine;
 using InControl;
 using System;
 using Sirenix.OdinInspector;
+using DG.Tweening;
 
 public class FirstPersonController : MonoBehaviour
 {
@@ -15,6 +16,10 @@ public class FirstPersonController : MonoBehaviour
     [SerializeField] private float verticalInput;
     [SerializeField] private Transform headPivot;
     [SerializeField] private Camera playerCamera;
+
+    private bool canWallJump = false;
+    private float timeSinceWallHit = 0f;
+    private Vector3 lastWallNormal;
     private float shakePhaseOffset = 0f;
     private float accumulatedTime = 0f;
     private float lastTimeMoving = 0f;
@@ -123,7 +128,7 @@ public class FirstPersonController : MonoBehaviour
     }
     private void StartSliding()
     {
-        meshTransform.localScale = new Vector3(1, 0.25f, 1);
+        meshTransform.DOScale(new Vector3(1, 0.25f, 1), 0.2f);
         isSliding = true;
         slideTimer = playerData.slideDuration;
         currentVelocity = transform.forward * playerData.slideSpeed;  // Set slide velocity in the current forward direction
@@ -163,7 +168,7 @@ public class FirstPersonController : MonoBehaviour
         {
             isSliding = false;  // End the slide
             currentVelocity = Vector3.zero;  // Ensure the character stops if any residual velocity remains
-            meshTransform.localScale = new Vector3(1, 1f, 1);  // Reset any transformations made during the slide
+            meshTransform.DOScale(new Vector3(1, 1f, 1), 0.2f);
         }
         Vector3 displacement = new Vector3(currentVelocity.x, verticalVelocity, currentVelocity.z) * Time.deltaTime;
         characterController.Move(displacement);
@@ -208,14 +213,35 @@ public class FirstPersonController : MonoBehaviour
     {
         if (playerActions.jumpAction.WasPressed && IsGrounded())
         {
-            Debug.Log("Jump");
-            verticalVelocity = Mathf.Sqrt(2 * playerData. jumpForce * playerData.gravity); // Initial jump velocity
+            verticalVelocity = Mathf.Sqrt(2 * playerData.jumpForce * playerData.gravity); // Normal jump
+        }
+        else if (playerActions.jumpAction.WasPressed && canWallJump)
+        {
+            // Wall jump logic
+            Vector3 jumpDirection = Vector3.Reflect(transform.forward, lastWallNormal).normalized;
+            verticalVelocity = Mathf.Sqrt(2 * playerData.jumpForce * playerData.gravity); // Wall jump velocity
+            currentVelocity = jumpDirection * playerData.walkSpeed; // Modify this to set the desired jump strength
+            RotateTowards(jumpDirection); // Rotate player to face the jump direction
+            canWallJump = false; // Reset wall jump ability
         }
     }
+    private void RotateTowards(Vector3 direction)
+    {
+        Quaternion targetRotation = Quaternion.LookRotation(direction, Vector3.up);
+        StartCoroutine(SmoothRotate(targetRotation));
+    }
 
-
-
-
+    private IEnumerator SmoothRotate(Quaternion targetRotation)
+    {
+        float time = 0;
+        while (time < 3)
+        {
+            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, time);
+            time += Time.deltaTime / playerData.rotationFromWallSmoothing; // rotationSmoothing controls the speed of the rotation
+            yield return null;
+        }
+        transform.rotation = targetRotation; // Ensure the rotation is set to the target exactly at the end
+    }
     private void HandleMovement()
     {
         if (isSliding)
@@ -337,6 +363,9 @@ public class FirstPersonController : MonoBehaviour
                 if (velocityTowardsWall > playerData.collisionVelocityThreshold)
                 {
                     isTouchingWall = true;
+                    lastWallNormal = collisionNormal;
+                    canWallJump = true;
+                    timeSinceWallHit = 0f; // Reset the timer
                     HandleWallCollision();
                 }
             }
@@ -345,8 +374,17 @@ public class FirstPersonController : MonoBehaviour
         {
             if (isTouchingWall)
             {
-                // Player has stopped colliding with the wall
                 isTouchingWall = false;
+            }
+        }
+
+        // Update the wall jump timer
+        if (canWallJump)
+        {
+            timeSinceWallHit += Time.deltaTime;
+            if (timeSinceWallHit > 0.5f) // Time window to wall jump
+            {
+                canWallJump = false;
             }
         }
     }
