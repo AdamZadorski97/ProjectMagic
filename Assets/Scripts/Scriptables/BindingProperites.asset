@@ -126,7 +126,7 @@ MonoBehaviour:
     mouseSprite: {fileID: 0}
     keyboardSprite: {fileID: 0}
   - name: Slide
-    inputControlType: 21
+    inputControlType: 17
     mouse: 0
     key: 38
     controllerSprite: {fileID: 0}

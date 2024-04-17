@@ -22,7 +22,6 @@ public class FirstPersonController : MonoBehaviour
     private Vector3 lastWallNormal;
     private float shakePhaseOffset = 0f;
     private float accumulatedTime = 0f;
-    private float lastTimeMoving = 0f;
     private bool isClimbing = false;
     private float rollVelocity; // To smooth the roll effect
     private float currentRoll;  // Current roll angle of the camera
@@ -87,10 +86,8 @@ public class FirstPersonController : MonoBehaviour
         if (!isClimbing)
             return;
 
-        Vector3 climbDirection = Vector3.zero;
         float inputY = playerActions.moveValue.y;
-
-        climbDirection = GetClimbDirection(inputY, false);
+        Vector3 climbDirection = GetClimbDirection(inputY, false);
         if (inputY < 0) CheckClimbEnd(true);
         characterController.Move(climbDirection * Time.deltaTime);
 
@@ -131,12 +128,12 @@ public class FirstPersonController : MonoBehaviour
         {
             verticalVelocity = Mathf.Sqrt(2 * playerData.jumpForce * playerData.gravity);
             currentVelocity = (transform.forward * playerData.slideSpeedWalk) + new Vector3(0, verticalVelocity, 0);
-
         }
         else
         {
             currentVelocity = transform.forward * slideSpeed;
         }
+        PlayRandomSound(playerData.slideSounds);
         meshTransform.DOScale(new Vector3(1, 0.25f, 1), 0.2f);
         isSliding = true;
         slideTimer = playerData.slideDuration;
@@ -228,10 +225,12 @@ public class FirstPersonController : MonoBehaviour
         if (playerActions.jumpAction.WasPressed && IsGrounded())
         {
             verticalVelocity = Mathf.Sqrt(2 * playerData.jumpForce * playerData.gravity); // Normal jump
+            PlayRandomSound(playerData.jumpSounds);
         }
         else if (playerActions.jumpAction.WasPressed && canWallJump)
         {
             // Wall jump logic
+            PlayRandomSound(playerData.jumpSounds);
             Vector3 jumpDirection = Vector3.Reflect(transform.forward, lastWallNormal).normalized;
             verticalVelocity = Mathf.Sqrt(2 * playerData.jumpForce * playerData.gravity); // Wall jump velocity
             currentVelocity = jumpDirection * playerData.walkSpeedMax; // Modify this to set the desired jump strength
@@ -247,14 +246,36 @@ public class FirstPersonController : MonoBehaviour
 
     private IEnumerator SmoothRotate(Quaternion targetRotation)
     {
+        // Implementing delay
+        yield return new WaitForSeconds(playerData.rotationDelay);
+
         float time = 0;
         while (time < 1)
         {
-            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, time);
-            time += Time.deltaTime / playerData.rotationFromWallSmoothing; // rotationSmoothing controls the speed of the rotation
+            float smoothedTime = ApplyEasing(time, playerData.rotationEaseType);
+            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, smoothedTime);
+            time += Time.deltaTime / playerData.rotationFromWallSmoothing;
             yield return null;
         }
-        transform.rotation = targetRotation; // Ensure the rotation is set to the target exactly at the end
+        transform.rotation = targetRotation;
+    }
+
+    private float ApplyEasing(float time, string easeType)
+    {
+        // Example easing functions; these could be more sophisticated based on needs
+        switch (easeType.ToLower())
+        {
+            case "linear":
+                return time;
+            case "easein":
+                return time * time;
+            case "easeout":
+                return time * (2 - time);
+            case "easeinout":
+                return time < 0.5 ? 2 * time * time : -1 + (4 - 2 * time) * time;
+            default:
+                return time;  // Default to linear if not specified
+        }
     }
     private void HandleMovement()
     {
@@ -288,7 +309,7 @@ public class FirstPersonController : MonoBehaviour
     }
     private void HandleFootsteps(List<AudioClip> footstepSounds, float stepRate)
     {
-        if (currentVelocity.magnitude > 0.1f && Time.time - lastStepTime > stepRate)
+        if (currentVelocity.magnitude > 0.1f && Time.time - lastStepTime > stepRate && IsGrounded())
         {
             lastStepTime = Time.time;
             PlayRandomSound(footstepSounds);
@@ -468,7 +489,29 @@ public class FirstPersonController : MonoBehaviour
             }
         }
     }
+    public void TriggerHeadShake(float recoilAmount)
+    {
+        float shakeIntensity = recoilAmount * 0.1f; // Scale the intensity to a suitable value
+        float shakeDuration = 0.1f; // Short, sharp shake
+        StartCoroutine(ShakeHead(shakeDuration, shakeIntensity));
+    }
 
+    private IEnumerator ShakeHead(float duration, float amount)
+    {
+        Vector3 originalPosition = headPivot.localPosition;
+        float elapsed = 0.0f;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float x = UnityEngine.Random.Range(-1f, 1f) * amount;
+            float y = UnityEngine.Random.Range(-1f, 1f) * amount;
+            headPivot.localPosition = originalPosition + new Vector3(x, y, 0);
+            yield return null;
+        }
+
+        headPivot.localPosition = originalPosition;
+    }
     private Vector3 GetCollisionNormal(Vector3 direction)
     {
         RaycastHit hit;

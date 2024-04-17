@@ -46,7 +46,7 @@ public class GunController : MonoBehaviour
             return;  // Check if there is ammo and play empty magazine sound if not
         }
         currentAmmo--;
-
+        playerController.TriggerHeadShake(gunData.recoil);
         PlayRandomSound(gunData.shootSounds);  // Play a random shooting sound
 
         Ray ray = Camera.main.ScreenPointToRay(new Vector3(Screen.width / 2, Screen.height / 2));
@@ -60,6 +60,7 @@ public class GunController : MonoBehaviour
         GameObject bullet = ObjectPool.Instance.GetFromPool("Bullet");
         bullet.transform.position = bulletSpawnPosition.position;
         bullet.GetComponent<BulletController>().SetVelocity(shootDirection, gunData.startSpeed);
+        bullet.GetComponent<BulletController>().gunController = this;
     }
 
     private IEnumerator Reload()
@@ -72,7 +73,7 @@ public class GunController : MonoBehaviour
         isReloading = false;
     }
 
-    private void PlayRandomSound(List<AudioClip> clips)
+    public void PlayRandomSound(List<AudioClip> clips)
     {
         if (clips.Count == 0)
             return; // Return if there are no clips

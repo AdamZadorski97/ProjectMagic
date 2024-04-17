@@ -16,4 +16,5 @@ public class GunData : ScriptableObject
     public List<AudioClip> shootSounds = new List<AudioClip>();
     public List<AudioClip> reloadSounds = new List<AudioClip>();
     public List<AudioClip> emptyMagazineSound = new List<AudioClip>();
+    public List<AudioClip> shootInpactSounds = new List<AudioClip>();
 }

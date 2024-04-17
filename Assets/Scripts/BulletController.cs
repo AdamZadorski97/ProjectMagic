@@ -1,3 +1,4 @@
+using JetBrains.Annotations;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -7,6 +8,8 @@ public class BulletController : MonoBehaviour
     private Rigidbody rb;  // Reference to Rigidbody for applying forces or setting velocity
     private ParticleSystem bulletParticles;
     private Collider bulletCollider;
+    public GunController gunController;
+    private int hitCount = 0;
     private void Awake()
     {
         bulletCollider = GetComponent<Collider>();
@@ -20,7 +23,9 @@ public class BulletController : MonoBehaviour
         StopAllCoroutines();
         StartCoroutine(AutoDestroyBullet());
         rb.angularVelocity = Vector3.zero;
- 
+        hitCount = 0;
+
+
     }
 
     public void SetVelocity(Vector3 direction, float bulletSpeed)
@@ -37,17 +42,33 @@ public class BulletController : MonoBehaviour
 
     private void OnCollisionEnter(Collision collision)
     {
+        hitCount++;  // Increment hit counter
+
+        if (hitCount >= 2)
+        {
+            // Disable the collider after two hits
+            if (bulletCollider)
+            {
+                bulletCollider.enabled = false;
+            }
+            // Optionally, stop any further processing since the bullet should no longer interact
+            return;
+        }
+        gunController.PlayRandomSound(gunController.gunData.shootInpactSounds);
         // Calculate reflection vector based on the incoming direction and the normal at the point of impact
         Vector3 inDirection = rb.velocity.normalized;
         Vector3 normal = collision.contacts[0].normal; // The normal at the point of impact
         Vector3 reflectDirection = Vector3.Reflect(inDirection, normal).normalized;
-
-        // Check the angle of incidence to adjust if necessary (optional)
-        if (Vector3.Angle(reflectDirection, -inDirection) > 170) // Close to 180 degrees means almost parallel
-        {
-            // Make a minor adjustment to the reflection direction to avoid unnatural behavior
-            reflectDirection = Quaternion.Euler(0, 1, 0) * reflectDirection; // Slightly adjust the reflection vector
-        }
+        //if (inDirection.x < 0)
+        //{
+        //    reflectDirection = new Vector3(-reflectDirection.x, reflectDirection.y, reflectDirection.z);
+        //}
+        //// Check the angle of incidence to adjust if necessary (optional)
+        //if (Vector3.Angle(reflectDirection, -inDirection) > 170) // Close to 180 degrees means almost parallel
+        //{
+        //    // Make a minor adjustment to the reflection direction to avoid unnatural behavior
+        //    reflectDirection = Quaternion.Euler(0, 50, 0) * reflectDirection; // Slightly adjust the reflection vector
+        //}
 
         // Reduce speed on bounce to simulate energy loss
         float speedAfterCollision = rb.velocity.magnitude * 0.7f; // adjust the factor to tweak energy loss on bounce
@@ -67,16 +88,18 @@ public class BulletController : MonoBehaviour
 
         // Optionally, disable the collider for a short time to prevent multiple collisions
       
-        if (bulletCollider)
-        {
+      
             bulletCollider.enabled = false;
             StartCoroutine(EnableColliderAfterDelay());
-        }
+        
     }
 
     private IEnumerator EnableColliderAfterDelay()
     {
-        yield return new WaitForSeconds(0.2f); // Delay before re-enabling collider, adjust as needed
-        bulletCollider.enabled = true;
+        yield return new WaitForSeconds(1.0f);  // Delay before re-enabling the collider
+        if (hitCount < 2 && bulletCollider)
+        {
+            bulletCollider.enabled = true;
+        }
     }
 }

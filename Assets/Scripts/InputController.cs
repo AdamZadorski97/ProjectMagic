@@ -128,6 +128,8 @@ public class InputActions : PlayerActionSet
     public PlayerAction runAction;
     public PlayerTwoAxisAction moveAction;
     public PlayerTwoAxisAction lookAction;
+    public PlayerAction swapWeaponNextAction;
+    public PlayerAction swapWeaponPreviousAction;
 
     public PlayerAction lookLeftAction;
     public PlayerAction lookRightAction;
@@ -163,6 +165,8 @@ public class InputActions : PlayerActionSet
         shootAction = CreatePlayerAction("Shoot");
         slideAction = CreatePlayerAction("Slide");
         runAction = CreatePlayerAction("Run");
+        swapWeaponNextAction = CreatePlayerAction("SwapWeaponNext");
+        swapWeaponPreviousAction = CreatePlayerAction("SwapWeaponPrevious");
         //Look
         lookLeftAction = CreatePlayerAction("Look Left");
         lookRightAction = CreatePlayerAction("Look Right");
@@ -238,6 +242,12 @@ public class InputActions : PlayerActionSet
 
         playerActions.runAction.AddDefaultBinding(InputController.Instance.bindingsScriptable.GetBinding("Run").key);
         playerActions.runAction.AddDefaultBinding(InputController.Instance.bindingsScriptable.GetBinding("Run").inputControlType);
+
+        playerActions.swapWeaponNextAction.AddDefaultBinding(InputController.Instance.bindingsScriptable.GetBinding("SwapWeaponNext").key);
+        playerActions.swapWeaponNextAction.AddDefaultBinding(InputController.Instance.bindingsScriptable.GetBinding("SwapWeaponNext").inputControlType);
+
+        playerActions.swapWeaponPreviousAction.AddDefaultBinding(InputController.Instance.bindingsScriptable.GetBinding("SwapWeaponPrevious").key);
+        playerActions.swapWeaponPreviousAction.AddDefaultBinding(InputController.Instance.bindingsScriptable.GetBinding("SwapWeaponPrevious").inputControlType);
 
         playerActions.moveAction = playerActions.CreateTwoAxisPlayerAction(playerActions.goLeftAction, playerActions.goRightAction, playerActions.goDownAction, playerActions.goUpAction);
         playerActions.lookAction = playerActions.CreateTwoAxisPlayerAction(playerActions.lookLeftAction, playerActions.lookRightAction, playerActions.lookDownAction, playerActions.lookUpAction);
