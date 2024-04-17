@@ -6,29 +6,49 @@ public class ObjectPool : MonoBehaviour
 {
     public static ObjectPool Instance;
 
-    [SerializeField] private GameObject pooledObjectPrefab;
-    [SerializeField] private int initialPoolSize = 20;
+    [System.Serializable]
+    public struct Pool
+    {
+        public string poolName;
+        public GameObject prefab;
+        public int size;
+    }
 
-    private Queue<GameObject> pool = new Queue<GameObject>();
+    public List<Pool> pools;
+    private Dictionary<string, Queue<GameObject>> poolDictionary;
 
     private void Awake()
     {
         Instance = this;
-        InitializePool();
+        InitializePools();
     }
 
-    private void InitializePool()
+    private void InitializePools()
     {
-        for (int i = 0; i < initialPoolSize; i++)
+        poolDictionary = new Dictionary<string, Queue<GameObject>>();
+
+        foreach (var pool in pools)
         {
-            GameObject obj = Instantiate(pooledObjectPrefab);
-            obj.SetActive(false);
-            pool.Enqueue(obj);
+            Queue<GameObject> objectPool = new Queue<GameObject>();
+            for (int i = 0; i < pool.size; i++)
+            {
+                GameObject obj = Instantiate(pool.prefab);
+                obj.SetActive(false);
+                objectPool.Enqueue(obj);
+            }
+            poolDictionary.Add(pool.poolName, objectPool);
         }
     }
 
-    public GameObject GetFromPool()
+    public GameObject GetFromPool(string poolName)
     {
+        if (!poolDictionary.ContainsKey(poolName))
+        {
+            Debug.LogError("Pool with name " + poolName + " does not exist.");
+            return null;
+        }
+
+        Queue<GameObject> pool = poolDictionary[poolName];
         if (pool.Count > 0)
         {
             GameObject obj = pool.Dequeue();
@@ -37,15 +57,31 @@ public class ObjectPool : MonoBehaviour
         }
         else
         {
-            // Optionally expand the pool here
-            GameObject obj = Instantiate(pooledObjectPrefab);
-            return obj;
+            // Optionally expand the pool here if needed
+            foreach (var poolItem in pools)
+            {
+                if (poolItem.poolName == poolName)
+                {
+                    GameObject obj = Instantiate(poolItem.prefab);
+                    return obj;
+                }
+            }
+
+            Debug.LogError("No prefab available for pool name: " + poolName);
+            return null;
         }
     }
 
-    public void ReturnToPool(GameObject obj)
+    public void ReturnToPool(string poolName, GameObject obj)
     {
+        if (!poolDictionary.ContainsKey(poolName))
+        {
+            Debug.LogError("Pool with name " + poolName + " does not exist.");
+            Destroy(obj); // or handle it some other way
+            return;
+        }
+
         obj.SetActive(false);
-        pool.Enqueue(obj);
+        poolDictionary[poolName].Enqueue(obj);
     }
 }

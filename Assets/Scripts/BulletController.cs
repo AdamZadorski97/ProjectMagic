@@ -27,12 +27,12 @@ public class BulletController : MonoBehaviour
     private IEnumerator AutoDestroyBullet()
     {
         yield return new WaitForSeconds(5);
-        ObjectPool.Instance.ReturnToPool(gameObject);
+        ObjectPool.Instance.ReturnToPool("Bullet", gameObject);
     }
 
     private void OnCollisionEnter(Collision collision)
     {
         // Return this bullet to the pool when it collides with something
-        ObjectPool.Instance.ReturnToPool(gameObject);
+        ObjectPool.Instance.ReturnToPool("Bullet", gameObject);
     }
 }

@@ -284,7 +284,7 @@ public class PlayerController : MonoBehaviour
     {
         if (playerActions.shootAction.WasPressed)
         {
-            GameObject bullet = ObjectPool.Instance.GetFromPool();
+            GameObject bullet = ObjectPool.Instance.GetFromPool("Bullet");
             bullet.transform.position = buletSpawnPoint.position;  // Set the position to the bullet spawn point
             bullet.GetComponent<BulletController>().SetVelocity(transform.forward);
         }
