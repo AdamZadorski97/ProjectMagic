@@ -1,0 +1,47 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bab708ce8630639428d158ad94ad864f, type: 3}
+  m_Name: MachineGun
+  m_EditorClassIdentifier: 
+  startSpeed: 100
+  bulletDeceleration: 1
+  maxDistance: 50
+  recoil: 0.1
+  reloadSpeed: 0.5
+  maxAmmo: 30
+  fireRate: 15
+  accuracy: 0
+  reloadTimeVariability: 1
+  vibrationIntencity: 0.3
+  vibrationTime: 0.2
+  recoilUp: 0.2
+  shootSounds:
+  - {fileID: 8300000, guid: 3acd1b5673311df4e9fc0cce8eacb922, type: 3}
+  - {fileID: 8300000, guid: 85fff880a76c6d44a98af14ceea4221c, type: 3}
+  - {fileID: 8300000, guid: 16e05eb20e5b1254fb4cf90cc89a2e29, type: 3}
+  - {fileID: 8300000, guid: 082af331f3e7a7542a455f7b9fd7abac, type: 3}
+  - {fileID: 8300000, guid: d980fa9d5220b0143b76064d8412d39c, type: 3}
+  - {fileID: 8300000, guid: bcfb8e6954d2b8a4197b3f7585df1cf1, type: 3}
+  - {fileID: 8300000, guid: 9f41a3c3acb88274987fa4aa38f66d74, type: 3}
+  - {fileID: 8300000, guid: adba2ed5d717c9842a1b9ead85a1a859, type: 3}
+  - {fileID: 8300000, guid: 44ba28d29f7c4d44792b97bbd83678b2, type: 3}
+  - {fileID: 8300000, guid: e964726d39829624c911cfffea89de86, type: 3}
+  reloadSounds:
+  - {fileID: 8300000, guid: 7abc48535ce737b4f9cda3cf4fb30428, type: 3}
+  emptyMagazineSound:
+  - {fileID: 8300000, guid: c2ce197208a9fc343824b9fa92e09a40, type: 3}
+  - {fileID: 8300000, guid: 5cfc55093d96bf94c84ee947980a2c47, type: 3}
+  - {fileID: 8300000, guid: 4969e320c0e8fd1489aa224607ba40db, type: 3}
+  shootInpactSounds:
+  - {fileID: 8300000, guid: 5368ea9cf062eea4d8ea7dd5b7c08f4e, type: 3}
+  - {fileID: 8300000, guid: 69810ce92bdbb2c4a961026624aa8c24, type: 3}
+  - {fileID: 8300000, guid: 92561fd491f170340b4f2183208da874, type: 3}

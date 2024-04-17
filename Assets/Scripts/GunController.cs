@@ -46,7 +46,7 @@ public class GunController : MonoBehaviour
             return;  // Check if there is ammo and play empty magazine sound if not
         }
         currentAmmo--;
-        playerController.TriggerHeadShake(gunData.recoil);
+        playerController.TriggerHeadShake(gunData);
         PlayRandomSound(gunData.shootSounds);  // Play a random shooting sound
 
         Ray ray = Camera.main.ScreenPointToRay(new Vector3(Screen.width / 2, Screen.height / 2));

@@ -16,6 +16,8 @@ public class FirstPersonController : MonoBehaviour
     [SerializeField] private float verticalInput;
     [SerializeField] private Transform headPivot;
     [SerializeField] private Camera playerCamera;
+    [SerializeField] private Animator animator;
+    [SerializeField] private Vector3 checkGroundOffset;
     private float lastStepTime = 0f;
     private bool canWallJump = false;
     private float timeSinceWallHit = 0f;
@@ -334,10 +336,18 @@ public class FirstPersonController : MonoBehaviour
         // Decide which footstep sounds to play based on speed
         if (isRunning)
         {
+            if(input.z != 0)
+            animator.SetBool("Run", true);
+            else
+                animator.SetBool("Run", false);
             HandleFootsteps(playerData.runFootstepSounds, playerData.stepRateRun);
         }
         else
         {
+            if (input.z != 0)
+                animator.SetBool("Walk", true);
+            else
+                animator.SetBool("Walk", false);
             HandleFootsteps(playerData.walkFootstepSounds, playerData.stepRateWalk);
         }
 
@@ -525,10 +535,12 @@ public class FirstPersonController : MonoBehaviour
             }
         }
     }
-    public void TriggerHeadShake(float recoilAmount)
+    public void TriggerHeadShake(GunData gunData)
     {
-        float shakeIntensity = recoilAmount * 0.1f; // Scale the intensity to a suitable value
+        float shakeIntensity = gunData.recoil * 0.1f; // Scale the intensity to a suitable value
         float shakeDuration = 0.1f; // Short, sharp shake
+        headPivot.localEulerAngles += new Vector3((-1)* gunData.recoilUp, 0, 0);
+        InputController.Instance.Vibrate(gunData.vibrationIntencity, playerActions, gunData.vibrationTime);
         StartCoroutine(ShakeHead(shakeDuration, shakeIntensity));
     }
 
@@ -536,7 +548,7 @@ public class FirstPersonController : MonoBehaviour
     {
         Vector3 originalPosition = headPivot.localPosition;
         float elapsed = 0.0f;
-
+       
         while (elapsed < duration)
         {
             elapsed += Time.deltaTime;
@@ -544,6 +556,7 @@ public class FirstPersonController : MonoBehaviour
             float y = UnityEngine.Random.Range(-1f, 1f) * amount;
             headPivot.localPosition = originalPosition + new Vector3(x, y, 0);
             yield return null;
+
         }
 
         headPivot.localPosition = originalPosition;
@@ -567,7 +580,7 @@ public class FirstPersonController : MonoBehaviour
     private bool IsGrounded()
     {
         RaycastHit hit;
-        if (Physics.SphereCast(transform.position, 0.5f, Vector3.down, out hit, 1f, playerData.groundMask))
+        if (Physics.SphereCast(transform.position + checkGroundOffset, 0.5f, Vector3.down, out hit, 1f, playerData.groundMask))
         {
             if (currentPlatform != hit.transform)
             {
