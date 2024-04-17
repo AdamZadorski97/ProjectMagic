@@ -15,15 +15,17 @@ MonoBehaviour:
   angularSpeedWalk: 140
   angularSpeedRun: 100
   jumpForce: 6
-  wallJumpForce: 8
   gravity: 80
   movementSmoothing: 0.1
   rotationSmoothing: 0.1
-  rotationFromWallSmoothing: 0.4
   maxVerticalAngle: 80
   groundMask:
     serializedVersion: 2
     m_Bits: 64
+  rotationDelay: 0
+  rotationEaseType: easeInOut
+  wallJumpForce: 10
+  rotationFromWallSmoothing: 0.6
   shakeMagnitude: 1.5
   shakeSpeed: 5
   walkSpeedMax: 5
@@ -79,3 +81,12 @@ MonoBehaviour:
   - {fileID: 8300000, guid: 442140d80fd14a247a423309a559fa76, type: 3}
   - {fileID: 8300000, guid: d7714a322d04dcb45aeda13888fa5750, type: 3}
   - {fileID: 8300000, guid: 384aa1d4b9873af49b1348b50c9d467f, type: 3}
+  slideSounds:
+  - {fileID: 8300000, guid: 63f48d6dc0afdcb48bf75f082f4cd21d, type: 3}
+  - {fileID: 8300000, guid: f53081578c808a04d9e9e86d32da16fe, type: 3}
+  - {fileID: 8300000, guid: 698c39c904a9fcd4c851323553378021, type: 3}
+  - {fileID: 8300000, guid: d1a57aadb256f5648b0d812affb94d34, type: 3}
+  jumpSounds:
+  - {fileID: 8300000, guid: 0e81f36117e216b4d8415f2193ac6d61, type: 3}
+  - {fileID: 8300000, guid: b17033d449e7be744a8283ae2015b892, type: 3}
+  - {fileID: 8300000, guid: 35ccfb4174de142428436ef106f101f7, type: 3}

@@ -45,6 +45,8 @@ public class FirstPersonController : MonoBehaviour
     private Vector3 lastPlatformPosition = Vector3.zero;
     [SerializeField] private Transform buletSpawnPoint;
     [SerializeField] private float shootingForce = 10f;
+    [SerializeField] private List<GameObject> weapons = new List<GameObject>();
+ 
 
     private void Start()
     {
@@ -72,8 +74,42 @@ public class FirstPersonController : MonoBehaviour
         HandleRunning();
         HandleClimbing();
         CheckWallCollision();
+        HandleWeaponSwap();
     }
-    public void HandleRunning()
+    private int currentWeaponIndex;
+    public void HandleWeaponSwap()
+    {
+        int previousIndex = currentWeaponIndex; // Store the previous index to disable the old weapon
+
+        // Check if the action to swap to the next weapon was pressed
+        if (playerActions.swapWeaponNextAction.WasPressed)
+        {
+            currentWeaponIndex++;
+            if (currentWeaponIndex >= weapons.Count) // Wrap around if the index exceeds the list
+            {
+                currentWeaponIndex = 0;
+            }
+        }
+
+        // Check if the action to swap to the previous weapon was pressed
+        if (playerActions.swapWeaponPreviousAction.WasPressed)
+        {
+            currentWeaponIndex--;
+            if (currentWeaponIndex < 0) // Wrap around if the index goes below zero
+            {
+                currentWeaponIndex = weapons.Count - 1;
+            }
+        }
+
+        // Update weapon activation states:
+        // Disable the previously active weapon and enable the new one
+        if (previousIndex != currentWeaponIndex) // Check to avoid unnecessary operations
+        {
+            weapons[previousIndex].SetActive(false);
+            weapons[currentWeaponIndex].SetActive(true);
+        }
+    }
+    private void HandleRunning()
     {
         if (playerActions.runAction.WasPressed)
         {

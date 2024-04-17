@@ -121,14 +121,14 @@ MonoBehaviour:
   - name: Shoot
     inputControlType: 16
     mouse: 0
-    key: 0
+    key: 2
     controllerSprite: {fileID: 0}
     mouseSprite: {fileID: 0}
     keyboardSprite: {fileID: 0}
   - name: Slide
     inputControlType: 17
     mouse: 0
-    key: 38
+    key: 8
     controllerSprite: {fileID: 0}
     mouseSprite: {fileID: 0}
     keyboardSprite: {fileID: 0}
@@ -136,6 +136,20 @@ MonoBehaviour:
     inputControlType: 5
     mouse: 0
     key: 38
+    controllerSprite: {fileID: 0}
+    mouseSprite: {fileID: 0}
+    keyboardSprite: {fileID: 0}
+  - name: SwapWeaponNext
+    inputControlType: 14
+    mouse: 0
+    key: 40
+    controllerSprite: {fileID: 0}
+    mouseSprite: {fileID: 0}
+    keyboardSprite: {fileID: 0}
+  - name: SwapWeaponPrevious
+    inputControlType: 13
+    mouse: 0
+    key: 40
     controllerSprite: {fileID: 0}
     mouseSprite: {fileID: 0}
     keyboardSprite: {fileID: 0}
