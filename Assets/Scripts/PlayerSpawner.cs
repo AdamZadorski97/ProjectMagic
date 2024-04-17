@@ -5,7 +5,7 @@ using ProjectDawn.SplitScreen;
 
 public class PlayerSpawner : MonoBehaviour
 {
-    [SerializeField] private SplitScreenEffect splitScreenEffect;
+
     [SerializeField] private Transform spawnPoint;
     public GameObject playerPrefab1; // Assign first player prefab in the inspector
     public GameObject playerPrefab2; // Assign second player prefab in the inspector
@@ -57,11 +57,8 @@ public class PlayerSpawner : MonoBehaviour
         // Choose prefab based on playersCount
         GameObject playerPrefab = playersCount == 1 ? playerPrefab1 : playerPrefab2;
         GameObject newPlayer = Instantiate(playerPrefab, spawnPoint.position + new Vector3(0,0, -playersCount), Quaternion.identity);
-        PlayerController playerController = newPlayer.GetComponent<PlayerController>();
-        GameObject newCamera = Instantiate(cameraPrefab, spawnPoint.position, Quaternion.identity);
-
-        splitScreenEffect.AddScreen(newCamera.GetComponent<Camera>(), playerController.transform);
-
+        FirstPersonController playerController = newPlayer.GetComponent<FirstPersonController>();
+   
         playerController.SetID(playersCount, device);
 
         spawnedPlayers.Add(newPlayer);

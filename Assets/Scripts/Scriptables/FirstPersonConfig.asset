@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eaca2537f7f6a954199c56e0b5b5bf99, type: 3}
+  m_Name: FirstPersonConfig
+  m_EditorClassIdentifier: 
+  angularSpeed: 90
+  jumpForce: 4
+  gravity: 80
+  movementSmoothing: 0.1
+  rotationSmoothing: 0.1
+  maxVerticalAngle: 80
+  shakeMagnitude: 1.5
+  shakeSpeed: 5
+  slideDeceleration: 5
+  walkSpeed: 5
+  runSpeed: 10
+  groundMask:
+    serializedVersion: 2
+    m_Bits: 64
+  slideSpeed: 30
+  slideDuration: 0.5
+  collisionVelocityThreshold: 0.5
+  speed: 5
+  ladderClimbSpeed: 3
