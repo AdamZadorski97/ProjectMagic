@@ -16,6 +16,7 @@ public class ObjectPool : MonoBehaviour
 
     public List<Pool> pools;
     private Dictionary<string, Queue<GameObject>> poolDictionary;
+    private Dictionary<string, Transform> poolParentDictionary; // To hold the parent transforms
 
     private void Awake()
     {
@@ -26,17 +27,24 @@ public class ObjectPool : MonoBehaviour
     private void InitializePools()
     {
         poolDictionary = new Dictionary<string, Queue<GameObject>>();
+        poolParentDictionary = new Dictionary<string, Transform>(); // Initialize the parent dictionary
 
         foreach (var pool in pools)
         {
+            // Create a parent GameObject for each pool
+            GameObject poolHolder = new GameObject(pool.poolName + " Pool");
+            poolHolder.transform.SetParent(transform); // Set as child of the ObjectPool GameObject
+
             Queue<GameObject> objectPool = new Queue<GameObject>();
             for (int i = 0; i < pool.size; i++)
             {
                 GameObject obj = Instantiate(pool.prefab);
                 obj.SetActive(false);
+                obj.transform.SetParent(poolHolder.transform); // Parent the pooled object to its pool's holder
                 objectPool.Enqueue(obj);
             }
             poolDictionary.Add(pool.poolName, objectPool);
+            poolParentDictionary.Add(pool.poolName, poolHolder.transform); // Store the parent transform
         }
     }
 
@@ -53,6 +61,7 @@ public class ObjectPool : MonoBehaviour
         {
             GameObject obj = pool.Dequeue();
             obj.SetActive(true);
+            obj.transform.SetParent(null); // Optionally unparent when taken from the pool
             return obj;
         }
         else
@@ -63,6 +72,7 @@ public class ObjectPool : MonoBehaviour
                 if (poolItem.poolName == poolName)
                 {
                     GameObject obj = Instantiate(poolItem.prefab);
+                    obj.transform.SetParent(poolParentDictionary[poolName]); // Parent to its holder
                     return obj;
                 }
             }
@@ -74,7 +84,7 @@ public class ObjectPool : MonoBehaviour
 
     public void ReturnToPool(string poolName, GameObject obj)
     {
-        if (!poolDictionary.ContainsKey(poolName))
+        if (!poolDictionary.ContainsKey(poolName) || !poolParentDictionary.ContainsKey(poolName))
         {
             Debug.LogError("Pool with name " + poolName + " does not exist.");
             Destroy(obj); // or handle it some other way
@@ -82,6 +92,7 @@ public class ObjectPool : MonoBehaviour
         }
 
         obj.SetActive(false);
+        obj.transform.SetParent(poolParentDictionary[poolName]); // Re-parent to its holder
         poolDictionary[poolName].Enqueue(obj);
     }
 }
