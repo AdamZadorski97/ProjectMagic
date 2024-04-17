@@ -4,7 +4,6 @@ using UnityEngine;
 
 public class BulletController : MonoBehaviour
 {
-    [SerializeField] private float bulletSpeed = 10f;  // Configurable bullet speed
     private Rigidbody rb;  // Reference to Rigidbody for applying forces or setting velocity
 
     private void Awake()
@@ -18,7 +17,7 @@ public class BulletController : MonoBehaviour
  
     }
 
-    public void SetVelocity(Vector3 direction)
+    public void SetVelocity(Vector3 direction, float bulletSpeed)
     {
         if (rb == null) rb = GetComponent<Rigidbody>();
         rb.velocity = direction * bulletSpeed;
