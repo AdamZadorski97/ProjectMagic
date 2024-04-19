@@ -12,15 +12,57 @@ public class GunController : MonoBehaviour
     private bool isReloading = false;
     private float nextTimeToFire = 0f; // For handling fire rate
     private AudioSource audioSource;
-
+    private bool gameIsFocused;
+    public Transform leftHunHandle;
+    public Transform rightHunHandle;
+    public void OnApplicationFocus(bool focus)
+    {
+        if (focus)
+        {
+            gameIsFocused = true;
+        }
+        else
+        {
+            gameIsFocused = false;
+        }
+    }
     private void Start()
     {
         currentAmmo = gunData.maxAmmo;  // Initialize ammo
-        audioSource = GetComponent<AudioSource>();  // Get the AudioSource component
+        // Get the AudioSource component
+        gameIsFocused = true;
     }
-
+    private void OnEnable()
+    {
+        if (rightHunHandle!=null)
+        {
+            playerController.ik.solver.rightHandEffector.target = rightHunHandle;
+            playerController.ik.solver.rightHandEffector.rotationWeight = 1;
+            playerController.ik.solver.rightHandEffector.positionWeight = 1;
+        }
+        else
+        {
+            playerController.ik.solver.rightHandEffector.target = null;
+            playerController.ik.solver.rightHandEffector.rotationWeight = 0;
+            playerController.ik.solver.rightHandEffector.positionWeight = 0;
+        }
+        if(leftHunHandle!=null)
+        {
+            playerController.ik.solver.leftHandEffector.target = leftHunHandle;
+            playerController.ik.solver.leftHandEffector.rotationWeight = 1;
+            playerController.ik.solver.leftHandEffector.positionWeight = 1;
+        }
+        else
+        {
+            playerController.ik.solver.leftHandEffector.target = null;
+            playerController.ik.solver.leftHandEffector.rotationWeight = 0;
+            playerController.ik.solver.leftHandEffector.positionWeight = 0;
+        }
+        audioSource = GetComponent<AudioSource>();
+    }
     private void Update()
     {
+        if (!gameIsFocused) return;
         if (isReloading)
         {
             return; // Skip update if currently reloading

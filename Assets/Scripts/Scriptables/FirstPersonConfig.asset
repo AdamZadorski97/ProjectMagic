@@ -26,10 +26,10 @@ MonoBehaviour:
   rotationEaseType: easeInOut
   wallJumpForce: 10
   rotationFromWallSmoothing: 0.6
-  shakeMagnitude: 1.5
+  shakeMagnitude: 1.1
   shakeSpeed: 5
-  walkSpeedMax: 5
-  runSpeedMax: 20
+  walkSpeedMax: 3
+  runSpeedMax: 8
   slideSpeedWalk: 30
   slideSpeedRun: 80
   slideDuration: 1

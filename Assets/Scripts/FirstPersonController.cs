@@ -5,6 +5,7 @@ using InControl;
 using System;
 using Sirenix.OdinInspector;
 using DG.Tweening;
+using RootMotion.FinalIK;
 
 public class FirstPersonController : MonoBehaviour
 {
@@ -15,7 +16,7 @@ public class FirstPersonController : MonoBehaviour
     [SerializeField] private Transform meshTransform;
     [SerializeField] private float verticalInput;
     [SerializeField] private Transform headPivot;
-    [SerializeField] private Camera playerCamera;
+    public Camera playerCamera;
     [SerializeField] private Animator animator;
     [SerializeField] private Vector3 checkGroundOffset;
     private float lastStepTime = 0f;
@@ -48,10 +49,24 @@ public class FirstPersonController : MonoBehaviour
     [SerializeField] private Transform buletSpawnPoint;
     [SerializeField] private float shootingForce = 10f;
     [SerializeField] private List<GameObject> weapons = new List<GameObject>();
- 
+    public FullBodyBipedIK ik;
+    public bool gameIsFocused;
+    public int playerIndex;
 
+    public void OnApplicationFocus(bool focus)
+    {
+        if (focus)
+        {
+            gameIsFocused = true;
+        }
+        else
+        {
+            gameIsFocused = false;
+        }
+    }
     private void Start()
     {
+        gameIsFocused = true;
         characterController = GetComponent<CharacterController>();
         audioSource = GetComponent<AudioSource>();
         SetPlayerActions();
@@ -59,7 +74,7 @@ public class FirstPersonController : MonoBehaviour
     private void SetPlayerActions()
     {
         // Adjust player ID for 0-based index if necessary
-        playerActions = InputController.Instance.GetPlayerActions(playerID - 1);
+        playerActions = InputController.Instance.GetPlayerActions(0);
         if (playerActions == null)
         {
             Debug.LogError($"Player actions not initialized for player ID: {playerID}");
@@ -67,6 +82,7 @@ public class FirstPersonController : MonoBehaviour
     }
     void Update()
     {
+        if (!gameIsFocused) return;
         moveDirection = new Vector3(playerActions.moveValue.x, 0, playerActions.moveValue.y);
         HandleMovement();
         HandleRotation();
@@ -418,7 +434,7 @@ public class FirstPersonController : MonoBehaviour
         verticalRotation = Mathf.Clamp(verticalRotation, -playerData.maxVerticalAngle, playerData.maxVerticalAngle);
 
         // Apply vertical rotation directly to the camera
-        playerCamera.transform.localEulerAngles = new Vector3(verticalRotation, 0, currentRoll);
+        headPivot.transform.localEulerAngles = new Vector3(verticalRotation, 0, currentRoll);
 
         // Roll effect based on horizontal rotation
         HandleCameraRoll(horizontalInput);
@@ -540,7 +556,7 @@ public class FirstPersonController : MonoBehaviour
         float shakeIntensity = gunData.recoil * 0.1f; // Scale the intensity to a suitable value
         float shakeDuration = 0.1f; // Short, sharp shake
         headPivot.localEulerAngles += new Vector3((-1)* gunData.recoilUp, 0, 0);
-        InputController.Instance.Vibrate(gunData.vibrationIntencity, playerActions, gunData.vibrationTime);
+       // InputController.Instance.Vibrate(gunData.vibrationIntencity, playerActions, gunData.vibrationTime);
         StartCoroutine(ShakeHead(shakeDuration, shakeIntensity));
     }
 
